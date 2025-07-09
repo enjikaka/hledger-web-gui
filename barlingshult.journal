@@ -1,0 +1,133 @@
+; Tillgångar
+account tillgångar
+alias 1900 = tillgångar
+; Bankkonto
+account tillgångar:bankkonto
+alias 1930 = tillgångar:bankkonto
+; Kundfordringar
+account tillgångar:kundfordringar
+alias 1510 = tillgångar:kundfordringar
+
+; Skulder
+account skulder
+; 261 Utgående moms, 25 %
+account skulder:utgående_moms_25:försäljning_sverige
+alias 2611 = skulder:utgående_moms_25:försäljning_sverige
+; 262 Utgående moms Sverige, 12 %
+account skulder:utgående_moms_12:försäljning_sverige
+alias 2621 = skulder:utgående_moms_12:försäljning_sverige
+; 264 Ingående moms
+account skulder:ingående_moms
+alias 2640 = skulder:ingående_moms
+; 265 Ingående moms
+account skulder:redovisningskonto_moms
+alias 2650 = skulder:redovisningskonto_moms
+
+account intäkter
+alias 3 = intäkter
+account intäkter:försäljning_sverige
+alias 3000 = intäkter:försäljning_sverige
+; Försäljning inom Sverige, 25 %
+account intäkter:försäljning_sverige:moms_25
+alias 3001 = intäkter:försäljning_sverige:moms_25
+; Försäljning inom Sverige, 12 % moms
+account intäkter:försäljning_sverige:moms_12
+alias 3002 = intäkter:försäljning_sverige:moms_25
+
+; Inköp av varor från Sverige
+account inköp_varor_sverige
+alias 4000 = inköp_varor_sverige
+; Inköp av djurfoder
+account inköp_varor_sverige:inköp_djurfoder
+alias 4020 = inköp_varor_sverige:inköp_djurfoder
+; Inköp av fårfoder
+account inköp_varor_sverige:inköp_djurfoder:inköp_fårfoder
+alias 4021 = inköp_varor_sverige:inköp_djurfoder:inköp_fårfoder
+; Inköp av hönsfoder
+account inköp_varor_sverige:inköp_djurfoder:inköp_hönsfoder
+alias 4022 = inköp_varor_sverige:inköp_djurfoder:inköp_hönsfoder
+
+2025-01-01 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-01-08 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-01-15 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-01-22 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-01-29 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-02-01 Försäljning - Ägg sålda till husbonden förg. månad
+    3002  -328.57 SEK
+    2621  -39.43 SEK
+    1930  368 SEK
+
+2025-02-05 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-02-12 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-02-19 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-02-26 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-03-01 Försäljning - Ägg sålda till husbonden förg. månad
+    3002  -228.57 SEK
+    2621  -27.43 SEK
+    1930  256 SEK
+
+2025-03-05 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-03-12 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-03-19 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-03-26 Granngården - Hönsfoder
+    4022  252.74 SEK
+    2640  63.18 SEK
+    1930  -315.92 SEK
+
+2025-04-01 Försäljning - Ägg sålda till husbonden förg. månad
+    3002  -457.14 SEK
+    2621  -54.86 SEK
+    1930  512 SEK
+
+2025-07-05 Granngården - Inköp fårfoder
+    4021  200 SEK
+    2640  50 SEK
+    1930  -250 SEK
