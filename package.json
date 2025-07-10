@@ -1,0 +1,21 @@
+{
+  "name": "hledger-swe-gui",
+  "version": "1.0.0",
+  "description": "A vanilla web application for managing hledger journal files. Upload your journal file and easily add new transactions using only the accounts defined in your file.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "server": "vite serve"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@preact/signals-core": "^1.11.0",
+    "@reduxjs/toolkit": "^2.8.2",
+    "redux": "^5.0.1",
+    "rolldown-vite": "^7.0.6",
+    "webact": "^0.2.23"
+  }
+}
