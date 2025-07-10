@@ -13,18 +13,23 @@ A vanilla web application for managing hledger journal files. Upload your journa
 
 ## How to Use
 
-1. **Start the server**:
+1. **Install dependencies**:
    ```bash
-   deno task serve
+   npm install
    ```
 
-2. **Open your browser** and navigate to `http://localhost:8000`
+2. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
 
-3. **Upload your journal file** by clicking "Choose Journal File" and selecting your `.journal` file
+3. **Open your browser** and navigate to `http://localhost:5173`
 
-4. **View available accounts** - the app will automatically extract all accounts defined in your file
+4. **Upload your journal file** by clicking "Choose Journal File" and selecting your `.journal` file
 
-5. **Add transactions**:
+5. **View available accounts** - the app will automatically extract all accounts defined in your file
+
+6. **Add transactions**:
    - Set the transaction date
    - Enter a description
    - Add postings by selecting accounts from the dropdown (only shows accounts from your file)
@@ -32,7 +37,7 @@ A vanilla web application for managing hledger journal files. Upload your journa
    - Add more postings if needed
    - The app will validate that postings balance to zero
 
-6. **Preview your journal** - see the updated content in real-time
+7. **Preview your journal** - see the updated content in real-time
 
 ## File Format Support
 
@@ -60,7 +65,10 @@ The app will format it as:
 
 ## Technical Details
 
-- **Pure vanilla JavaScript** - no frameworks or dependencies
+- **TypeScript** - Type-safe development with modern JavaScript features
+- **Vite** - Fast development server and build tool
+- **Webact** - Lightweight web components library
+- **Preact Signals** - Reactive state management
 - **Responsive design** - works on desktop, tablet, and mobile
 - **File parsing** - client-side parsing of journal files
 - **Validation** - ensures transactions balance and all fields are filled
@@ -68,11 +76,26 @@ The app will format it as:
 
 ## Development
 
-This project uses Deno for the development server. The main file is `src/index.html` which contains all the HTML, CSS, and JavaScript.
+This project uses Vite for the development server and build process.
 
-To run the development server:
-```bash
-deno task serve
+### Available Scripts
+
+- `npm run dev` - Start the development server
+- `npm run build` - Build for production
+- `npm run server` - Serve the built application
+
+### Project Structure
+
+```
+src/
+├── js/
+│   ├── components/     # Webact components
+│   ├── signals.ts      # Preact signals for state
+│   ├── parse-journal-file.ts  # Journal file parser
+│   └── app.ts          # Main application logic
+├── css/
+│   └── style.css       # Application styles
+└── index.html          # Main HTML file
 ```
 
 ## Browser Compatibility
@@ -81,4 +104,5 @@ Works in all modern browsers that support:
 - File API
 - ES6+ JavaScript
 - CSS Grid and Flexbox
-- Modern CSS features 
+- Web Components
+- Constructable Stylesheets 
