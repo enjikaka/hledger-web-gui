@@ -5,6 +5,8 @@ import { accounts } from "../signals";
 
 class AccountsList extends Component {
   componentDidMount() {
+    this.updateAccountsList(accounts.value);
+
     effect(() => {
       this.updateAccountsList(accounts.value);
     });
@@ -14,9 +16,13 @@ class AccountsList extends Component {
     const $ol = this.$("ol");
 
     if ($ol) {
-      $ol.innerHTML = accounts
-        .map((account) => `<li>${account.name}</li>`)
-        .join("");
+      if (accounts.length === 0) {
+        $ol.innerHTML = `Inga konton`;
+      } else {
+        $ol.innerHTML = accounts
+          .map((account) => `<li>${account.name}</li>`)
+          .join("");
+      }
     } else {
       console.warn("ol element not found in shadow DOM");
     }
@@ -24,9 +30,7 @@ class AccountsList extends Component {
 
   render() {
     return `
-        <ol>
-
-        </ol>
+        <ol></ol>
     `;
   }
 }

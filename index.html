@@ -7,41 +7,16 @@
     <link rel="stylesheet" href="src/css/style.css">
   </head>
   <body>
-    <div class="container">
-      <div class="header">
-        <h1>📊 Hledger Journal Manager</h1>
-        <p>Upload your journal file and add transactions easily</p>
-      </div>
-
-      <div class="main-content">
-        <!-- File Upload Section -->
-        <div class="file-upload-section">
-          <h3>📁 Upload Journal File</h3>
-          <input
-            type="file"
-            id="journalFile"
-            class="file-input"
-            accept=".journal,.j,.txt"
-          >
-          <label for="journalFile" class="file-label"
-          >Choose Journal File</label>
-          <div class="file-info" id="fileInfo">No file selected</div>
-        </div>
-        <section>
-          <h3>Accounts</h3>
-          <accounts-list></accounts-list>
-        </section>
-        <section>
-          <h3>Journal Preview</h3>
-          <journal-preview></journal-preview>
-        </section>
-        <section>
-          <h3>Output</h3>
-          <hledger-output></hledger-output>
-        </section>
-      </div>
-    </div>
-
+    <header>
+      <nav>
+        <ul>
+          <li><router-link href="/">Start</router-link></li>
+          <li><router-link href="/transactions">Transaktioner</router-link></li>
+          <li><router-link href="/accounts">Konton</router-link></li>
+        </ul>
+      </nav>
+    </header>
+    <app-router></app-router>
     <script type="module" src="src/js/app.js"></script>
   </body>
 </html>

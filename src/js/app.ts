@@ -1,6 +1,4 @@
-import "./components/journal-preview.ts";
-import "./components/accounts-list.ts";
-import "./components/hledger-output.ts";
+import "./app-router.ts";
 
 import { parseJournalFile } from "./parse-journal-file.ts";
 import * as Signals from "./signals.ts";
