@@ -1,6 +1,7 @@
 import { registerFunctionComponent } from "webact";
 import AccountsPage from "./pages/accounts-page.ts";
 import IndexPage from "./pages/index-page.ts";
+import MomsrapportPage from "./pages/momsrapport-page.ts";
 import TransactionsPage from "./pages/transactions-page.ts";
 
 function AppRouter() {
@@ -31,6 +32,9 @@ function AppRouter() {
           break;
         case "/accounts":
           hostElement.innerHTML = `<${AccountsPage}></${AccountsPage}>`;
+          break;
+        case "/momsrapport":
+          hostElement.innerHTML = `<${MomsrapportPage}></${MomsrapportPage}>`;
           break;
         default:
           hostElement.innerHTML = "Sidan finns ej.";
