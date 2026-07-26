@@ -8,7 +8,7 @@ export type Alias = {
 };
 
 export type Posting = {
-  account: string;
+  account: number;
   amount: number;
   currency: string;
 };
@@ -131,7 +131,7 @@ function parseTransaction(lines: string[]): Transaction | null {
       if (!amountMatch) return null;
 
       return {
-        account,
+        account: parseInt(account, 10),
         amount: parseFloat(amountMatch[1]),
         currency: amountMatch[3] || "",
       };

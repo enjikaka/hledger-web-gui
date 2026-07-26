@@ -16,6 +16,9 @@ alias 2611 = skulder:utgående_moms_25:försäljning_sverige
 ; 262 Utgående moms Sverige, 12 %
 account skulder:utgående_moms_12:försäljning_sverige
 alias 2621 = skulder:utgående_moms_12:försäljning_sverige
+; 263 Utgående moms Sverige, 6 %
+account skulder:utgående_moms_6:försäljning_sverige
+alias 2631 = skulder:utgående_moms_6:försäljning_sverige
 ; 264 Ingående moms
 account skulder:ingående_moms
 alias 2640 = skulder:ingående_moms

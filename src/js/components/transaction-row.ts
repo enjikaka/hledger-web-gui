@@ -1,5 +1,7 @@
 import { Component, registerComponent } from "webact";
+import type { Posting } from "../parse-journal-file";
 import { aliases, transactions } from '../signals';
+
 import styles from "./transaction-row.css?inline";
 
 const html = String.raw;
@@ -8,6 +10,14 @@ const dateFormatter = new Intl.DateTimeFormat("sv-SE", {
   day: "numeric",
   timeZone: "Europe/Stockholm",
 });
+
+const numberFormatter = new Intl.NumberFormat("sv-SE", {
+  style: "currency",
+  currency: "SEK",
+  minimumFractionDigits: 2,
+});
+
+const toSEK = (amount: number) => numberFormatter.format(amount);
 
 class TransactionRow extends Component {
   constructor () {
@@ -31,6 +41,7 @@ class TransactionRow extends Component {
     }
 
     const [vendor, title, tags] = tsx?.description.split(',').map(s => s.trim()) || [];
+    const isAccount = (accountId: number) => (posting: Posting) => accountId === posting.account;
 
     return html`
             <details>
@@ -48,7 +59,7 @@ class TransactionRow extends Component {
                     </div>
                     <div class="col">
                       <div class="row">
-                        <div class="mono">${tsx?.postings.find(p => p.account === '1930')?.amount.toFixed(2)}</div>
+                        <div class="mono">${toSEK(tsx?.postings.find(isAccount(1930))?.amount ?? 0)}</div>
                       </div>
                     </div>
                   </div>
@@ -64,8 +75,8 @@ class TransactionRow extends Component {
                 ${tsx?.postings.map(posting => html`
                   
                       <tr>
-                        <td class="account">${posting.account} ${aliases.value.find(a => a.id === Number.parseInt(posting.account, 10))?.to || ''}</td>
-                        <td class="amount">${posting.amount}</td>
+                        <td class="account">${posting.account} ${aliases.value.find(a => a.id === posting.account)?.to || ''}</td>
+                        <td class="amount">${toSEK(posting.amount)}</td>
                       </tr>
                   
                 `).join('')}  
