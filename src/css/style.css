@@ -42,3 +42,7 @@ nav ul {
   align-items: center;
   list-style: none;
 }
+
+@view-transition {
+  navigation: auto;
+}

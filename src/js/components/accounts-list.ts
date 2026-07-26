@@ -1,7 +1,7 @@
 import { effect } from "@preact/signals-core";
 import { Component, registerComponent } from "webact";
 import type { Account } from "../parse-journal-file";
-import { accounts } from "../signals";
+import { accounts, aliases } from "../signals";
 
 class AccountsList extends Component {
   componentDidMount() {
@@ -17,8 +17,13 @@ class AccountsList extends Component {
       if (accounts.length === 0) {
         $ol.innerHTML = `Inga konton`;
       } else {
+
         $ol.innerHTML = accounts
-          .map((account) => `<li>${account.name}</li>`)
+          .map((account) => {
+            const alias = aliases.value.find(a => a.to === account.name);
+
+            return `<li>${alias?.id} ${account.name}</li>`;
+          })
           .join("");
       }
     } else {

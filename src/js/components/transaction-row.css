@@ -10,6 +10,11 @@ summary::marker {
 .summary-wrapper {
     background-color: white;
     padding: 0.5em;
+    display: flex;
+
+    & .col:first-child {
+        flex: 1;
+    }
 
     &:hover {
         background-color: rgb(250, 250, 250);
@@ -22,8 +27,7 @@ summary::marker {
     gap: 1em;
 }
 
-.posting,
-.date {
+.mono {
     font-family: 'Atkinson Hyperlegible Mono', monospace;
     text-rendering: geometricPrecision;
     font-variant-numeric: tabular-nums;
