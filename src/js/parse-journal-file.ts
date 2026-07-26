@@ -14,6 +14,7 @@ export type Posting = {
 };
 
 export type Transaction = {
+  uuid: string;
   date: string;
   description: string;
   postings: Array<Posting>;
@@ -138,6 +139,7 @@ function parseTransaction(lines: string[]): Transaction | null {
     .filter((posting): posting is Posting => posting !== null);
 
   return {
+    uuid: crypto.randomUUID(),
     date,
     description,
     postings: parsedPostings,

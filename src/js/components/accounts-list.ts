@@ -7,9 +7,7 @@ class AccountsList extends Component {
   componentDidMount() {
     this.updateAccountsList(accounts.value);
 
-    effect(() => {
-      this.updateAccountsList(accounts.value);
-    });
+    effect(() => this.updateAccountsList(accounts.value));
   }
 
   updateAccountsList(accounts: Array<Account>) {

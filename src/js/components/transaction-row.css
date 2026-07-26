@@ -1,0 +1,35 @@
+summary {
+    padding: 0;
+}
+
+summary::marker {
+    display: none;
+    content: "";
+}
+
+.summary-wrapper {
+    background-color: white;
+    padding: 0.5em;
+
+    &:hover {
+        background-color: rgb(250, 250, 250);
+    }
+}
+
+.row {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 1em;
+}
+
+.posting,
+.date {
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    text-rendering: geometricPrecision;
+    font-variant-numeric: tabular-nums;
+}
+
+.posting {
+    background-color: rgb(240, 240, 240);
+    width: 100%;
+}

@@ -3,6 +3,10 @@ import { Component, registerComponent } from "webact";
 import type { Transaction } from "../parse-journal-file";
 import { transactions } from "../signals";
 
+import './transaction-row';
+
+const html = String.raw;
+
 class TransactionsList extends Component {
   componentDidMount() {
     effect(() => {
@@ -11,43 +15,35 @@ class TransactionsList extends Component {
   }
 
   updateList(transactions: Array<Transaction>) {
-    const $tbody = this.$("tbody");
-    const $thead = this.$("thead");
+    const $section = this.$("section");
 
-    if ($tbody) {
+    if ($section) {
       if (transactions.length === 0) {
-        $tbody.innerHTML = `<tr><td colspan="2">Inga transaktioner</td></tr>`;
-        $thead.style.display = "none";
+        $section.innerHTML = `Inga transaktioner`;
       } else {
-        $tbody.innerHTML = transactions
+        $section.innerHTML = transactions
           .map(
-            (transaction) =>
-              `<tr>
-                <td>${transaction.date}</td>
-                <td>${transaction.description}</td>
-                </tr>`,
+            (transaction) => {
+              return html`
+                <transaction-row
+                  tsx-uuid="${transaction.uuid}"
+                >
+                </transaction-row>
+              `;
+            },
           )
           .join("");
-        $thead.style.display = "table-header-group";
       }
     } else {
-      console.warn("ol element not found in shadow DOM");
+      console.warn("section element not found in shadow DOM");
     }
   }
 
   render() {
     return `
-        <table>
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>Beskrivning</th>
-                </tr>
-            </thead>
-            <tbody>
-
-            </tbody>
-        </table>
+        <section>
+        
+        </section>
     `;
   }
 }
