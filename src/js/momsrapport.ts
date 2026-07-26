@@ -23,32 +23,34 @@ export function generateMomsrapport(year: string): Momsrapport {
   let utgaendeMoms6 = 0;
   let ingaendeMoms = 0;
 
-  // Process each transaction
+  // Summera signerat: intäkter och utgående moms bokförs i kredit (negativt),
+  // så tecknet byts vid summeringen. Kreditnotor/rättelser dras då av korrekt.
   periodTransactions.forEach((tx) => {
     tx.postings.forEach((posting) => {
       const account = posting.account;
-      const amount = Math.abs(posting.amount); // Use absolute value
+      const amount = posting.amount;
 
-      // [A05] Momspliktig försäljning - sum of 25% and 12% VAT sales
+      // Ruta 05: Momspliktig försäljning
       if ([3000, 3001, 3002].includes(account)) {
-        momspliktigForsaljning += amount;
+        momspliktigForsaljning -= amount;
       }
 
-      // [B10] Utgående moms 25%
+      // Ruta 10: Utgående moms 25 %
       if (account === 2611) {
-        utgaendeMoms25 += amount;
+        utgaendeMoms25 -= amount;
       }
 
-      // [B12] Utgående moms 12%
+      // Ruta 11: Utgående moms 12 %
       if (account === 2621) {
-        utgaendeMoms12 += amount;
-      }
-      // [B12] Utgående moms 6%
-      if (account === 2631) {
-        utgaendeMoms6 += amount;
+        utgaendeMoms12 -= amount;
       }
 
-      // [F48] Ingående moms
+      // Ruta 12: Utgående moms 6 %
+      if (account === 2631) {
+        utgaendeMoms6 -= amount;
+      }
+
+      // Ruta 48: Ingående moms (bokförs i debet, positivt)
       if (account === 2640) {
         ingaendeMoms += amount;
       }
@@ -70,12 +72,15 @@ export function generateMomsrapport(year: string): Momsrapport {
 }
 
 export function formatMomsrapport(report: Momsrapport): string {
+  // Skatteverket vill ha hela kronor i momsdeklarationen
+  const kr = (amount: number) => Math.round(amount).toString();
+
   return `Momsrapport för ${report.year}
 ---------------------------
-[A05] Momspliktig försäljning: ${report.momspliktigForsaljning}
-[B10] Utgående moms 25 %: ${report.utgaendeMoms25}
-[B11] Utgående moms 12 %: ${report.utgaendeMoms12}
-[B12] Utgående moms 6 %: ${report.utgaendeMoms6}
-[F48] Ingående moms: ${report.ingaendeMoms}
-Netto moms: ${report.nettoMoms}`;
+[05] Momspliktig försäljning: ${kr(report.momspliktigForsaljning)}
+[10] Utgående moms 25 %: ${kr(report.utgaendeMoms25)}
+[11] Utgående moms 12 %: ${kr(report.utgaendeMoms12)}
+[12] Utgående moms 6 %: ${kr(report.utgaendeMoms6)}
+[48] Ingående moms: ${kr(report.ingaendeMoms)}
+Netto moms (ruta 49): ${kr(report.nettoMoms)}`;
 }

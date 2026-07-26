@@ -1,8 +1,9 @@
 import { registerFunctionComponent } from "webact";
 
 import "../components/rapport-moms.ts";
+import type { WebactThis } from "../webact-types.ts";
 
-function MomsrapportPage() {
+function MomsrapportPage(this: WebactThis) {
   const { html } = this;
 
   html`

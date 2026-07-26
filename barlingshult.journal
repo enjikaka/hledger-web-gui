@@ -35,7 +35,7 @@ account intäkter:försäljning_sverige:moms_25
 alias 3001 = intäkter:försäljning_sverige:moms_25
 ; Försäljning inom Sverige, 12 % moms
 account intäkter:försäljning_sverige:moms_12
-alias 3002 = intäkter:försäljning_sverige:moms_25
+alias 3002 = intäkter:försäljning_sverige:moms_12
 
 ; Inköp av varor från Sverige
 account inköp_varor_sverige

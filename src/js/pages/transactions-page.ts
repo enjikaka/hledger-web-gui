@@ -1,8 +1,9 @@
 import { registerFunctionComponent } from "webact";
 
 import "../components/transactions-list.ts";
+import type { WebactThis } from "../webact-types.ts";
 
-function TransactionsPage() {
+function TransactionsPage(this: WebactThis) {
   const { html } = this;
 
   html`

@@ -3,8 +3,9 @@ import AccountsPage from "./pages/accounts-page.ts";
 import IndexPage from "./pages/index-page.ts";
 import MomsrapportPage from "./pages/momsrapport-page.ts";
 import TransactionsPage from "./pages/transactions-page.ts";
+import type { WebactThis } from "./webact-types.ts";
 
-function AppRouter() {
+function AppRouter(this: WebactThis) {
   const { postRender, $, html } = this;
 
   let currentAbortController: AbortController | null = null;
@@ -49,7 +50,7 @@ function AppRouter() {
       console.timeEnd(timerId);
     } catch (e) {
       // Only log errors that aren't from aborting
-      if (e.name !== "AbortError") {
+      if (!(e instanceof Error) || e.name !== "AbortError") {
         console.error("Could not render route");
         console.error(e);
       }
@@ -62,7 +63,7 @@ function AppRouter() {
     document.addEventListener("router:navigate", (event) => {
       if (event instanceof CustomEvent) {
         renderRoute(event.detail.pathname);
-        history.pushState(null, null, event.detail.pathname);
+        history.pushState(null, "", event.detail.pathname);
       }
     });
 
@@ -74,7 +75,7 @@ function AppRouter() {
   });
 }
 
-function RouterLink() {
+function RouterLink(this: WebactThis) {
   const { $, css, html, postRender } = this;
 
   html`<slot></slot>`;

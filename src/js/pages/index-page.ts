@@ -2,8 +2,9 @@ import { registerFunctionComponent } from "webact";
 
 import { parseJournalFile } from "../parse-journal-file.ts";
 import * as Signals from "../signals.ts";
+import type { WebactThis } from "../webact-types.ts";
 
-function IndexPage() {
+function IndexPage(this: WebactThis) {
   const { $, html, postRender } = this;
 
   html`
@@ -17,7 +18,7 @@ function IndexPage() {
     const fileInput = $("#journalFile");
     const output = $("#output");
 
-    fileInput?.addEventListener("change", async (event) => {
+    fileInput?.addEventListener("change", async (event: Event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
 
       if (file) {
