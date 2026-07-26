@@ -6,6 +6,17 @@ export const transactions = signal<Array<Transaction>>([]);
 export const accounts = signal<Array<Account>>([]);
 export const aliases = signal<Array<Alias>>([]);
 
+/** Råtexten före första transaktionen — bevaras ordagrant vid spara
+ *  så att kommentarer och kontodefinitioner inte går förlorade. */
+export const journalHeader = signal<string>("");
+
+/** Filhandtag till öppnad journal (File System Access API). null = ingen fil
+ *  eller webbläsare utan stöd (då används nedladdning som fallback). */
+export const fileHandle = signal<FileSystemFileHandle | null>(null);
+
+/** Namnet på öppnad fil, för visning och som nedladdningsnamn. */
+export const fileName = signal<string>("");
+
 /** Globalt valt år — styr transaktionslistan, momsrapporten m.fl. vyer. */
 export const selectedYear = signal<string>(String(new Date().getFullYear()));
 
@@ -21,17 +32,16 @@ export const hledgerOutput = computed(() => {
   const TWO_SPACES = "  ";
   const FOUR_SPACES = "    ";
 
-  const accountsHledger = accounts.value
-    .map((account) => {
-      return `account ${account.name}`;
-    })
-    .join("\n");
-
-  const aliasesHledger = aliases.value
-    .map((alias) => {
-      return `alias ${alias.id} = ${alias.to}`;
-    })
-    .join("\n");
+  // Header från inläst fil bevaras ordagrant; utan fil genereras
+  // konto-/aliasrader från signalerna.
+  const header = journalHeader.value.trimEnd()
+    ? journalHeader.value.trimEnd()
+    : [
+        accounts.value.map((account) => `account ${account.name}`).join("\n"),
+        aliases.value.map((alias) => `alias ${alias.id} = ${alias.to}`).join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n\n");
 
   const transactionsHledger = transactions.value
     .map((transaction) => {
@@ -44,7 +54,7 @@ export const hledgerOutput = computed(() => {
     })
     .join("\n\n");
 
-  return `${accountsHledger}\n\n${aliasesHledger}\n\n${transactionsHledger}`;
+  return `${[header, transactionsHledger].filter(Boolean).join("\n\n")}\n`;
 });
 
 const signals = {
@@ -54,6 +64,8 @@ const signals = {
   hledgerOutput,
   selectedYear,
   availableYears,
+  journalHeader,
+  fileName,
 };
 
 signalsDevtool.init({ signals, effect });

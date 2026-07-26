@@ -24,7 +24,10 @@ export type Transaction = {
 export type JournalItem =
   | { type: "account"; data: Account }
   | { type: "alias"; data: Alias }
-  | { type: "transaction"; data: Transaction };
+  | { type: "transaction"; data: Transaction }
+  /** Råtexten före första transaktionen (kontodefinitioner, kommentarer m.m.),
+   *  bevaras ordagrant så att en sparad fil inte tappar kommentarer. */
+  | { type: "header"; data: string };
 
 export async function* parseJournalFile(
   file: File,
@@ -35,6 +38,8 @@ export async function* parseJournalFile(
   let buffer = "";
 
   let transactionBuffer = null; // for accumulating transactions
+  const headerLines: Array<string> = [];
+  let headerDone = false;
 
   while (!done) {
     buffer += decoder.decode(chunk, { stream: true });
@@ -43,6 +48,15 @@ export async function* parseJournalFile(
 
     for (let line of lines) {
       const trimmed = line.trim();
+
+      if (!headerDone) {
+        if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+          headerDone = true;
+          yield { type: "header", data: headerLines.join("\n") };
+        } else {
+          headerLines.push(line);
+        }
+      }
 
       if (!trimmed || trimmed.startsWith(";")) continue; // skip empty/comments
 
@@ -109,6 +123,11 @@ export async function* parseJournalFile(
   if (transactionBuffer) {
     const tx = parseTransaction(transactionBuffer);
     if (tx) yield { type: "transaction", data: tx };
+  }
+
+  // Fil helt utan transaktioner: hela innehållet är header
+  if (!headerDone) {
+    yield { type: "header", data: headerLines.join("\n") };
   }
 }
 

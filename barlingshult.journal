@@ -97,7 +97,7 @@ alias 4022 = inköp_varor_sverige:inköp_djurfoder:inköp_hönsfoder
 2025-02-01 Försäljning,  Ägg sålda till husbonden förg. månad
     3002  -328.57 SEK
     2621  -39.43 SEK
-    1930  368 SEK
+    1930  368.00 SEK
 
 2025-02-05 Granngården,  Hönsfoder
     4022  252.74 SEK
@@ -122,7 +122,7 @@ alias 4022 = inköp_varor_sverige:inköp_djurfoder:inköp_hönsfoder
 2025-03-01 Försäljning, Ägg sålda till husbonden förg. månad
     3002  -228.57 SEK
     2621  -27.43 SEK
-    1930  256 SEK
+    1930  256.00 SEK
 
 2025-03-05 Granngården, Hönsfoder
     4022  252.74 SEK
@@ -147,9 +147,14 @@ alias 4022 = inköp_varor_sverige:inköp_djurfoder:inköp_hönsfoder
 2025-04-01 Försäljning, Ägg sålda till husbonden förg. månad
     3002  -457.14 SEK
     2621  -54.86 SEK
-    1930  512 SEK
+    1930  512.00 SEK
 
 2025-07-05 Granngården, Inköp fårfoder
-    4021  200 SEK
-    2640  50 SEK
-    1930  -250 SEK
+    4021  200.00 SEK
+    2640  50.00 SEK
+    1930  -250.00 SEK
+
+2026-07-26 Granngården, Hönsfoder, #höns
+    4022  303.20 SEK
+    2640  75.80 SEK
+    1930  -379.00 SEK

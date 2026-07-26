@@ -1,55 +1,94 @@
 import { registerFunctionComponent } from "webact";
 
-import { parseJournalFile } from "../parse-journal-file.ts";
-import * as Signals from "../signals.ts";
+import {
+  openJournal,
+  parseFileIntoSignals,
+  reopenLastJournal,
+  storedFileName,
+  supportsFileSystemAccess,
+} from "../journal-file.ts";
 import type { WebactThis } from "../webact-types.ts";
 
 function IndexPage(this: WebactThis) {
-  const { $, html, postRender } = this;
+  const { $, html, css, postRender } = this;
 
   html`
     <h1>Bokföringsprogram</h1>
     <p>Öppna din journal-fil för att börja hantera dina transaktioner och konton.</p>
-    <input type="file" id="journalFile" accept=".journal" />
+    <button id="open" type="button">Öppna journal-fil…</button>
+    <button id="reopen" type="button" hidden></button>
+    <input type="file" id="fallback" accept=".journal,.hledger,.j" hidden />
     <output id="output"></output>
   `;
 
+  css`
+    button {
+      font: inherit;
+      padding: 0.5rem 1rem;
+    }
+
+    output {
+      display: block;
+      margin-block-start: 0.75rem;
+    }
+  `;
+
+  const goToTransactions = () => {
+    document.dispatchEvent(
+      new CustomEvent("router:navigate", {
+        detail: { pathname: "/transactions" },
+      }),
+    );
+  };
+
   postRender(() => {
-    const fileInput = $("#journalFile");
+    const openButton = $("#open");
+    const reopenButton = $("#reopen");
+    const fallbackInput = $("#fallback");
     const output = $("#output");
 
-    fileInput?.addEventListener("change", async (event: Event) => {
-      const file = (event.target as HTMLInputElement).files?.[0];
-
-      if (file) {
-        for await (const item of parseJournalFile(file)) {
-          switch (item.type) {
-            case "account":
-              Signals.accounts.value = [...Signals.accounts.value, item.data];
-              break;
-            case "alias":
-              Signals.aliases.value = [...Signals.aliases.value, item.data];
-              break;
-            case "transaction":
-              Signals.transactions.value = [
-                ...Signals.transactions.value,
-                item.data,
-              ];
-              break;
+    if (supportsFileSystemAccess()) {
+      openButton.addEventListener("click", async () => {
+        try {
+          await openJournal();
+          goToTransactions();
+        } catch (e) {
+          // Avbruten filväljare är inget fel
+          if (!(e instanceof DOMException && e.name === "AbortError")) {
+            output.textContent = "Kunde inte öppna filen.";
+            console.error(e);
           }
         }
+      });
 
-        document.dispatchEvent(
-          new CustomEvent("router:navigate", {
-            detail: {
-              pathname: "/transactions",
-            },
-          }),
-        );
-      } else {
-        output.textContent = "Ingen fil vald.";
-      }
-    });
+      // Visa "fortsätt med senaste filen" om ett handtag finns sparat
+      storedFileName().then((name) => {
+        if (name) {
+          reopenButton.textContent = `Fortsätt med ${name}`;
+          reopenButton.hidden = false;
+        }
+      });
+
+      reopenButton.addEventListener("click", async () => {
+        if (await reopenLastJournal()) {
+          goToTransactions();
+        } else {
+          output.textContent = "Kunde inte återöppna filen — välj den manuellt.";
+        }
+      });
+    } else {
+      // Safari/Firefox: vanlig filväljare, spara sker via nedladdning
+      openButton.addEventListener("click", () => fallbackInput.click());
+
+      fallbackInput.addEventListener("change", async (event: Event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+
+        if (file) {
+          await parseFileIntoSignals(file);
+          goToTransactions();
+        }
+      });
+    }
   });
 }
 

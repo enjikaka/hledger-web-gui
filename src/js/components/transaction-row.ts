@@ -50,7 +50,10 @@ class TransactionRow extends Component {
       return;
     }
 
-    const [vendor, title, tags] = tsx?.description.split(',').map(s => s.trim()) || [];
+    const parts = tsx.description.split(',').map(s => s.trim());
+    const vendor = parts.length > 1 ? parts[0] : '';
+    const title = parts.length > 1 ? parts[1] : parts[0];
+    const tags = parts[2] ?? '';
     const isAccount = (accountId: number) => (posting: Posting) => accountId === posting.account;
 
     return html`
