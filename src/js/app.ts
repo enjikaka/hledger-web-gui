@@ -1,4 +1,5 @@
 import "./app-router.ts";
+import "./components/year-picker.ts";
 
 import { parseJournalFile } from "./parse-journal-file.ts";
 import * as Signals from "./signals.ts";

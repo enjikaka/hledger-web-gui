@@ -5,6 +5,18 @@ import type { Account, Alias, Transaction } from "./parse-journal-file";
 export const transactions = signal<Array<Transaction>>([]);
 export const accounts = signal<Array<Account>>([]);
 export const aliases = signal<Array<Alias>>([]);
+
+/** Globalt valt år — styr transaktionslistan, momsrapporten m.fl. vyer. */
+export const selectedYear = signal<string>(String(new Date().getFullYear()));
+
+/** Alla år som förekommer i journalen, plus innevarande år. Senaste först. */
+export const availableYears = computed(() => {
+  const years = new Set(
+    transactions.value.map((transaction) => transaction.date.slice(0, 4)),
+  );
+  years.add(String(new Date().getFullYear()));
+  return [...years].sort().reverse();
+});
 export const hledgerOutput = computed(() => {
   const TWO_SPACES = "  ";
   const FOUR_SPACES = "    ";
@@ -24,7 +36,8 @@ export const hledgerOutput = computed(() => {
   const transactionsHledger = transactions.value
     .map((transaction) => {
       const postings = transaction.postings.map((posting) => {
-        return `${FOUR_SPACES}${posting.account}${TWO_SPACES}${posting.amount}`;
+        const amount = `${posting.amount.toFixed(2)} ${posting.currency}`.trimEnd();
+        return `${FOUR_SPACES}${posting.account}${TWO_SPACES}${amount}`;
       });
 
       return `${transaction.date} ${transaction.description}\n${postings.join("\n")}`;
@@ -39,6 +52,8 @@ const signals = {
   accounts,
   aliases,
   hledgerOutput,
+  selectedYear,
+  availableYears,
 };
 
 signalsDevtool.init({ signals, effect });

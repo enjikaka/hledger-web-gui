@@ -1,5 +1,6 @@
 import { registerFunctionComponent } from "webact";
 
+import "../components/new-transaction.ts";
 import "../components/transactions-list.ts";
 import type { WebactThis } from "../webact-types.ts";
 
@@ -8,6 +9,10 @@ function TransactionsPage(this: WebactThis) {
 
   html`
     <h1>Transaktioner</h1>
+    <details>
+      <summary>Ny transaktion</summary>
+      <new-transaction></new-transaction>
+    </details>
     <transactions-list></transactions-list>
   `;
 }

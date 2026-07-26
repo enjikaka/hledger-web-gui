@@ -24,6 +24,16 @@ class TransactionRow extends Component {
     super(import.meta.url);
   }
 
+  componentDidMount() {
+    this.$(".delete")?.addEventListener("click", () => {
+      const tsx = transactions.value.find(tsx => tsx.uuid === this.props.tsxUuid);
+
+      if (tsx && window.confirm(`Ta bort "${tsx.date} ${tsx.description}"?`)) {
+        transactions.value = transactions.value.filter(t => t.uuid !== tsx.uuid);
+      }
+    });
+  }
+
   render() {
     (async () => {
       if (this._sDOM) {
@@ -79,9 +89,10 @@ class TransactionRow extends Component {
                         <td class="amount">${toSEK(posting.amount)}</td>
                       </tr>
                   
-                `).join('')}  
+                `).join('')}
                 </tbody>
                 </table>
+                <button type="button" class="delete">Ta bort</button>
             </details>
         `;
   }

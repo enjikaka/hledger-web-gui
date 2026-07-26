@@ -26,6 +26,19 @@ alias 2640 = skulder:ingående_moms
 account skulder:redovisningskonto_moms
 alias 2650 = skulder:redovisningskonto_moms
 
+; Eget kapital
+account eget_kapital
+alias 2010 = eget_kapital
+; Egna uttag
+account eget_kapital:egna_uttag
+alias 2013 = eget_kapital:egna_uttag
+; Egna insättningar
+account eget_kapital:egna_insättningar
+alias 2018 = eget_kapital:egna_insättningar
+; Årets resultat
+account eget_kapital:årets_resultat
+alias 2019 = eget_kapital:årets_resultat
+
 account intäkter
 alias 3 = intäkter
 account intäkter:försäljning_sverige
@@ -36,6 +49,12 @@ alias 3001 = intäkter:försäljning_sverige:moms_25
 ; Försäljning inom Sverige, 12 % moms
 account intäkter:försäljning_sverige:moms_12
 alias 3002 = intäkter:försäljning_sverige:moms_12
+; Försäljning tjänster utanför EU, momsfri (t.ex. Patreon) — ruta 40
+account intäkter:tjänster_utanför_eu
+alias 3305 = intäkter:tjänster_utanför_eu
+; Försäljning tjänster till annat EU-land, momsfri (t.ex. Google Adsense) — ruta 39
+account intäkter:tjänster_eu
+alias 3308 = intäkter:tjänster_eu
 
 ; Inköp av varor från Sverige
 account inköp_varor_sverige

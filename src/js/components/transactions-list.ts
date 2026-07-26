@@ -1,7 +1,7 @@
 import { effect } from "@preact/signals-core";
 import { Component, registerComponent } from "webact";
 import type { Transaction } from "../parse-journal-file";
-import { transactions } from "../signals";
+import { selectedYear, transactions } from "../signals";
 
 import './transaction-row';
 
@@ -10,7 +10,11 @@ const html = String.raw;
 class TransactionsList extends Component {
   componentDidMount() {
     effect(() => {
-      this.updateList(transactions.value);
+      this.updateList(
+        transactions.value.filter((transaction) =>
+          transaction.date.startsWith(selectedYear.value),
+        ),
+      );
     });
   }
 
@@ -19,7 +23,7 @@ class TransactionsList extends Component {
 
     if ($section) {
       if (transactions.length === 0) {
-        $section.innerHTML = `Inga transaktioner`;
+        $section.innerHTML = `Inga transaktioner ${selectedYear.value}`;
       } else {
         $section.innerHTML = transactions
           .map(
