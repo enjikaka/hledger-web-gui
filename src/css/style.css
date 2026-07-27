@@ -14,10 +14,17 @@
   src: url('/font/AtkinsonHyperlegibleMono-VariableFont_wght.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: 'DM Serif Display';
+  src: url('/font/DMSerifDisplay-Regular.ttf') format('truetype');
+}
+
+
 :root {
-  --primary-color: hsl(179, 100%, 16%);
-  --secondary-color: hsl(102, 19%, 90%);
-  --accent-color: hsl(189, 67%, 41%);
+  --hue: 180;
+  --primary-color: hsl(var(--hue), 100%, 16%);
+  --secondary-color: hsl(calc(var(--hue) - 78), 19%, 90%);
+  --accent-color: hsl(var(--hue), 67%, 41%);
 }
 
 body {
@@ -39,12 +46,28 @@ nav {
   corner-shape: squircle;
 }
 
+.brand {
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  margin-block-end: 1em;
+  font-family: 'DM Serif Display';
+  user-select: none;
+}
+
 header strong {
   font-size: 24px;
   font-weight: bold;
   display: block;
-  margin: 1em auto;
   text-align: center;
+  font-size: 1.61803398875rem;
+  margin-top: -0.809rem;
+}
+
+header figure svg {
+  width: calc(1.61803398875rem * 1.61803398875);
+  height: calc(1.61803398875rem * 1.61803398875);
+  fill: var(--accent-color);
 }
 
 nav ul {
