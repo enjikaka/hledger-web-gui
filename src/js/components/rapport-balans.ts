@@ -3,7 +3,7 @@ import { Component, registerComponent } from "webact";
 import { generateBalansrapport, type KontoRad } from "../balansrapport";
 import { selectedYear } from "../signals";
 
-import styles from "./rapport-balans.css?inline";
+import styles from "./rapport.css?inline";
 
 const html = String.raw;
 

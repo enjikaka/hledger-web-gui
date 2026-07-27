@@ -70,17 +70,3 @@ export function generateMomsrapport(year: string): Momsrapport {
     nettoMoms,
   };
 }
-
-export function formatMomsrapport(report: Momsrapport): string {
-  // Skatteverket vill ha hela kronor i momsdeklarationen
-  const kr = (amount: number) => Math.round(amount).toString();
-
-  return `Momsrapport för ${report.year}
----------------------------
-[05] Momspliktig försäljning: ${kr(report.momspliktigForsaljning)}
-[10] Utgående moms 25 %: ${kr(report.utgaendeMoms25)}
-[11] Utgående moms 12 %: ${kr(report.utgaendeMoms12)}
-[12] Utgående moms 6 %: ${kr(report.utgaendeMoms6)}
-[48] Ingående moms: ${kr(report.ingaendeMoms)}
-Netto moms (ruta 49): ${kr(report.nettoMoms)}`;
-}
