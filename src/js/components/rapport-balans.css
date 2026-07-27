@@ -1,0 +1,32 @@
+table {
+  border-collapse: collapse;
+  min-width: min(100%, 44rem);
+}
+
+caption {
+  text-align: left;
+  font-weight: bold;
+  padding-block: 0.75rem 0.25rem;
+}
+
+th,
+td {
+  padding: 0.25rem 0.75rem 0.25rem 0;
+  text-align: left;
+}
+
+th.amount,
+td.amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+tfoot td {
+  font-weight: bold;
+  border-block-start: 1px solid currentColor;
+}
+
+.differens {
+  font-weight: bold;
+  color: #b3261e;
+}
