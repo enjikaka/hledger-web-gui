@@ -1,0 +1,53 @@
+name: Tester
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  # Går att köra manuellt från Actions-fliken
+  workflow_dispatch:
+
+# En körning per gren räcker — pushar man igen är den förra inte intressant
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Typkontroll och tester
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Hämta koden
+        uses: actions/checkout@v4
+
+      - name: Sätt upp Node
+        uses: actions/setup-node@v4
+        with:
+          # Vite 8 kräver ^20.19 || >=22.12
+          node-version: "22"
+          cache: npm
+
+      - name: Installera beroenden
+        run: npm ci
+
+      - name: Typkontroll
+        run: npm run typecheck
+
+      # Rapportörerna väljs i vitest.config.ts utifrån GITHUB_ACTIONS:
+      # annoteringar och jobbsammanfattning i CI, ren utskrift lokalt.
+      - name: Kör tester
+        run: npm test
+
+      - name: Spara testrapporten
+        # Körs även när testerna faller — det är då rapporten behövs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testresultat
+          path: test-results.xml
+          retention-days: 30
+          if-no-files-found: warn
