@@ -199,12 +199,22 @@ export function generateNeBilaga(year: string): NeBilaga {
       continue;
     }
 
-    // Skatteverket vill ha hela kronor på blanketten
-    const belopp = Math.round(mappning.kostnad ? saldo : -saldo);
+    const belopp = mappning.kostnad ? saldo : -saldo;
     const rad = rader.get(mappning.ruta)!;
 
+    // Summera exakt — avrundas per ruta efter loopen, annars kan
+    // öresavrundningar per konto driva iväg R11 från bokfört resultat
     rad.belopp += belopp;
-    rad.konton.push({ konto, namn: kontonamn(konto), belopp });
+    rad.konton.push({
+      konto,
+      namn: kontonamn(konto),
+      belopp: Math.round(belopp),
+    });
+  }
+
+  // Skatteverket vill ha hela kronor på blanketten
+  for (const rad of rader.values()) {
+    rad.belopp = Math.round(rad.belopp);
   }
 
   const iOrdning = (rutor: Array<NeRuta>) =>

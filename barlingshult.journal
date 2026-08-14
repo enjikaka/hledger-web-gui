@@ -7,6 +7,12 @@ alias 1930 = tillgångar:bankkonto
 ; Kundfordringar
 account tillgångar:kundfordringar
 alias 1510 = tillgångar:kundfordringar
+; 163 Avräkning för skatter och avgifter (skattekonto)
+account tillgångar:skattekonto
+alias 1630 = tillgångar:skattekonto
+; 165 Momsfordran — moms att få tillbaka från Skatteverket
+account tillgångar:momsfordran
+alias 1650 = tillgångar:momsfordran
 
 ; Skulder
 account skulder
@@ -55,6 +61,9 @@ alias 3305 = intäkter:tjänster_utanför_eu
 ; Försäljning tjänster till annat EU-land, momsfri (t.ex. Google Adsense) — ruta 39
 account intäkter:tjänster_eu
 alias 3308 = intäkter:tjänster_eu
+; 374 Öres- och kronutjämning — öresdifferensen när momsen deklareras i hela kronor
+account intäkter:öresutjämning
+alias 3740 = intäkter:öresutjämning
 
 ; Inköp av varor från Sverige
 account inköp_varor_sverige
@@ -68,6 +77,11 @@ alias 4021 = inköp_varor_sverige:inköp_djurfoder:inköp_fårfoder
 ; Inköp av hönsfoder
 account inköp_varor_sverige:inköp_djurfoder:inköp_hönsfoder
 alias 4022 = inköp_varor_sverige:inköp_djurfoder:inköp_hönsfoder
+
+; Årets resultat
+; 8999 nollar resultaträkningen vid bokslut och möts av 2019 i eget kapital
+account årets_resultat
+alias 8999 = årets_resultat
 
 2025-01-01 Granngården, Hönsfoder, #höns
     4022  252.74 SEK

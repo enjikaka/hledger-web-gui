@@ -1,5 +1,5 @@
 import { registerFunctionComponent } from "webact";
-import { mallar, skapaPostings, skapaTransaktion } from "../mallar.ts";
+import { betalkonton, mallar, skapaPostings, skapaTransaktion } from "../mallar.ts";
 import { aliases, transactions } from "../signals.ts";
 import type { WebactThis } from "../webact-types.ts";
 
@@ -32,6 +32,12 @@ function NewTransaction(this: WebactThis) {
         Belopp inkl. moms
         <input type="number" id="belopp" step="0.01" min="0.01" required inputmode="decimal" />
       </label>
+      <label id="betalkonto-label">
+        Betalkonto
+        <select id="betalkonto">
+          ${betalkonton.map((b) => `<option value="${b.konto}">${b.namn}</option>`).join("")}
+        </select>
+      </label>
       <button type="submit">Lägg till</button>
     </form>
     <output>
@@ -55,6 +61,10 @@ function NewTransaction(this: WebactThis) {
       display: grid;
       gap: 0.25rem;
       font-size: 0.85rem;
+    }
+
+    label[hidden] {
+      display: none;
     }
 
     input, select, button {
@@ -83,11 +93,22 @@ function NewTransaction(this: WebactThis) {
     const datumInput = $("#datum");
     const beskrivningInput = $("#beskrivning");
     const beloppInput = $("#belopp");
+    const betalkontoInput = $("#betalkonto");
+    const betalkontoLabel = $("#betalkonto-label");
     const previewTable = $(".preview");
     const previewBody = $(".preview tbody");
     const status = $(".status");
 
     const valdMall = () => mallar[parseInt(mallInput.value, 10)];
+    const valtBetalkonto = () => parseInt(betalkontoInput.value, 10);
+
+    // Insättning/uttag är redan överföringar mellan bank och eget kapital —
+    // där är betalkontovalet inte relevant och döljs.
+    const uppdateraBetalkonto = () => {
+      const mall = valdMall();
+      betalkontoLabel.hidden = mall.typ === "insättning" || mall.typ === "uttag";
+      betalkontoInput.value = String(mall.betalkonto);
+    };
 
     const kontonamn = (id: number) =>
       aliases.value.find((alias) => alias.id === id)?.to || "";
@@ -100,7 +121,7 @@ function NewTransaction(this: WebactThis) {
         return;
       }
 
-      const postings = skapaPostings(valdMall(), belopp);
+      const postings = skapaPostings(valdMall(), belopp, valtBetalkonto());
 
       previewBody.innerHTML = postings
         .map(
@@ -117,13 +138,16 @@ function NewTransaction(this: WebactThis) {
 
     datumInput.value = new Date().toISOString().slice(0, 10);
     beskrivningInput.value = valdMall().beskrivning;
+    uppdateraBetalkonto();
 
     mallInput.addEventListener("change", () => {
       beskrivningInput.value = valdMall().beskrivning;
+      uppdateraBetalkonto();
       uppdateraPreview();
     });
 
     beloppInput.addEventListener("input", uppdateraPreview);
+    betalkontoInput.addEventListener("change", uppdateraPreview);
 
     form.addEventListener("submit", (event: Event) => {
       event.preventDefault();
@@ -140,6 +164,7 @@ function NewTransaction(this: WebactThis) {
         datumInput.value,
         belopp,
         beskrivningInput.value.trim(),
+        valtBetalkonto(),
       );
 
       transactions.value = [...transactions.value, transaktion];
