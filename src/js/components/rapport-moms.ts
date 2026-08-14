@@ -1,6 +1,7 @@
 import { effect } from "@preact/signals-core";
 import { Component, registerComponent } from "webact";
-import { generateMomsrapport } from "../momsrapport";
+import { MANUELLA_RUTOR, RUTGRUPPER } from "../moms-rutor";
+import { generateMomsrapport, momsrader } from "../momsrapport";
 import { selectedYear } from "../signals";
 
 import styles from "./rapport.css?inline";
@@ -28,13 +29,14 @@ class RapportMoms extends Component {
 
       const rapport = generateMomsrapport(selectedYear.value);
 
-      const rader: Array<[string, string, number]> = [
-        ["05", "Momspliktig försäljning", rapport.momspliktigForsaljning],
-        ["10", "Utgående moms 25 %", rapport.utgaendeMoms25],
-        ["11", "Utgående moms 12 %", rapport.utgaendeMoms12],
-        ["12", "Utgående moms 6 %", rapport.utgaendeMoms6],
-        ["48", "Ingående moms att dra av", rapport.ingaendeMoms],
-      ];
+      // Avsnitt utan rörelse döljs, utom blankettens kärnrutor som alltid
+      // visas så att rapporten ser likadan ut även ett år utan händelser.
+      const grupper = RUTGRUPPER.map((grupp) => ({
+        ...grupp,
+        rader: momsrader(rapport, grupp.rutor).filter(
+          (rad) => grupp.alltid || rad.belopp !== 0,
+        ),
+      })).filter((grupp) => grupp.rader.length > 0);
 
       $section.innerHTML = html`
         <table class="mono">
@@ -46,19 +48,35 @@ class RapportMoms extends Component {
               <th class="amount">Belopp</th>
             </tr>
           </thead>
-          <tbody>
-            ${rader
-              .map(
-                ([ruta, beskrivning, belopp]) => html`
-                  <tr>
-                    <td>${ruta}</td>
-                    <td>${beskrivning}</td>
-                    <td class="amount">${kr(belopp)}</td>
+          ${grupper
+            .map(
+              (grupp) => html`
+                <tbody>
+                  <tr class="grupp">
+                    <td colspan="3">${grupp.rubrik}</td>
                   </tr>
-                `,
-              )
-              .join("")}
-          </tbody>
+                  ${grupp.rader
+                    .map(
+                      (rad) => html`
+                        <tr>
+                          <td>${rad.ruta}</td>
+                          <td>
+                            ${rad.beskrivning}
+                            ${
+                              MANUELLA_RUTOR.has(rad.ruta)
+                                ? `<span class="manuell">fylls i manuellt</span>`
+                                : ""
+                            }
+                          </td>
+                          <td class="amount">${kr(rad.belopp)}</td>
+                        </tr>
+                      `,
+                    )
+                    .join("")}
+                </tbody>
+              `,
+            )
+            .join("")}
           <tfoot>
             <tr>
               <td>49</td>

@@ -34,88 +34,85 @@ export async function* parseJournalFile(
 ): AsyncGenerator<JournalItem> {
   const decoder = new TextDecoder("utf-8");
   const reader = file.stream().getReader();
-  let { value: chunk, done } = await reader.read();
-  let buffer = "";
 
-  let transactionBuffer = null; // for accumulating transactions
+  let buffer = "";
+  let transactionBuffer: Array<string> | null = null;
   const headerLines: Array<string> = [];
   let headerDone = false;
 
+  /** Tolkar en rad. Både strömmens rader och filens sista rad utan
+   *  radbrytning går genom den här, så inget kan tappas bort på slutet. */
+  function* hanteraRad(line: string): Generator<JournalItem> {
+    const trimmed = line.trim();
+
+    if (!headerDone) {
+      if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+        headerDone = true;
+        yield { type: "header", data: headerLines.join("\n") };
+      } else {
+        headerLines.push(line);
+      }
+    }
+
+    if (!trimmed || trimmed.startsWith(";")) return; // skip empty/comments
+
+    if (transactionBuffer) {
+      if (/^\s/.test(line)) {
+        transactionBuffer.push(line);
+        return;
+      }
+
+      // flush previous transaction
+      const tx = parseTransaction(transactionBuffer);
+      if (tx) yield { type: "transaction", data: tx };
+      transactionBuffer = null;
+    }
+
+    if (trimmed.startsWith("account ")) {
+      yield {
+        type: "account",
+        data: { name: trimmed.substring(8).trim() },
+      };
+    } else if (trimmed.startsWith("alias ")) {
+      const match = trimmed
+        .substring(6)
+        .trim()
+        .match(/^(\d+)\s*=\s*(.+)$/);
+      if (match?.[2]) {
+        yield {
+          type: "alias",
+          data: {
+            id: parseInt(match[1], 10),
+            to: match[2].trim(),
+          },
+        };
+      }
+    } else if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      transactionBuffer = [line];
+    }
+  }
+
+  let { value: chunk, done } = await reader.read();
+
   while (!done) {
     buffer += decoder.decode(chunk, { stream: true });
-    let lines = buffer.split("\n");
-    buffer = lines.pop() || "";
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
 
-    for (let line of lines) {
-      const trimmed = line.trim();
-
-      if (!headerDone) {
-        if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
-          headerDone = true;
-          yield { type: "header", data: headerLines.join("\n") };
-        } else {
-          headerLines.push(line);
-        }
-      }
-
-      if (!trimmed || trimmed.startsWith(";")) continue; // skip empty/comments
-
-      if (transactionBuffer) {
-        if (/^\s/.test(line)) {
-          transactionBuffer.push(line);
-          continue;
-        } else {
-          // flush previous transaction
-          const tx = parseTransaction(transactionBuffer);
-          if (tx) yield { type: "transaction", data: tx };
-          transactionBuffer = null;
-        }
-      }
-
-      if (trimmed.startsWith("account ")) {
-        yield {
-          type: "account",
-          data: { name: trimmed.substring(8).trim() },
-        };
-      } else if (trimmed.startsWith("alias ")) {
-        const match = trimmed
-          .substring(6)
-          .trim()
-          .match(/^(\d+)\s*=\s*(.+)$/);
-        if (match && match[2]) {
-          yield {
-            type: "alias",
-            data: {
-              id: parseInt(match[1], 10),
-              to: match[2].trim(),
-            },
-          };
-        }
-      } else if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
-        transactionBuffer = [line];
-      }
+    for (const line of lines) {
+      yield* hanteraRad(line);
     }
 
     ({ value: chunk, done } = await reader.read());
   }
 
   buffer += decoder.decode();
+
+  // Sista raden ligger kvar i bufferten när filen saknar avslutande
+  // radbrytning — utan den här rundan tappas den helt.
   if (buffer) {
-    const remainingLines = buffer.split("\n");
-    for (let line of remainingLines) {
-      if (!line.trim()) continue;
-      if (transactionBuffer) {
-        if (/^\s/.test(line)) {
-          transactionBuffer.push(line);
-        } else {
-          const tx = parseTransaction(transactionBuffer);
-          if (tx) yield { type: "transaction", data: tx };
-          transactionBuffer = null;
-        }
-      }
-      if (!transactionBuffer && /^\d{4}-\d{2}-\d{2}/.test(line.trim())) {
-        transactionBuffer = [line];
-      }
+    for (const line of buffer.split("\n")) {
+      yield* hanteraRad(line);
     }
   }
 

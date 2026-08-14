@@ -1,9 +1,14 @@
+import {
+  arKreditnormal,
+  INGAENDE_RUTOR,
+  KONTO_RUTA,
+  MOMSKONTON,
+  type MomsRuta,
+  RUTA_BESKRIVNING,
+  UTGAENDE_RUTOR,
+} from "./moms-rutor";
 import type { Posting, Transaction } from "./parse-journal-file";
 import { transactions } from "./signals";
-
-const UTGAENDE_MOMS_KONTON = [2611, 2621, 2631];
-const INGAENDE_MOMS_KONTO = 2640;
-const MOMSKONTON = [...UTGAENDE_MOMS_KONTON, INGAENDE_MOMS_KONTO];
 
 /** Redovisningskonto för moms — nettot att betala bokförs hit i kredit. */
 export const REDOVISNINGSKONTO_MOMS = 2650;
@@ -43,14 +48,33 @@ export function arMomsomforing(tx: Transaction): boolean {
   );
 }
 
+export interface Momsrad {
+  ruta: MomsRuta;
+  beskrivning: string;
+  belopp: number;
+}
+
 export interface Momsrapport {
   year: string;
-  momspliktigForsaljning: number;
-  utgaendeMoms25: number;
-  utgaendeMoms12: number;
-  utgaendeMoms6: number;
-  ingaendeMoms: number;
+  /** Belopp per ruta. Rutor utan rörelse saknas i mappen. */
+  rutor: Map<MomsRuta, number>;
+  /** Ruta 49: utgående moms minus ingående. Positivt = att betala. */
   nettoMoms: number;
+}
+
+/** Belopp i en ruta, 0 om den saknar rörelse. */
+export const rutbelopp = (rapport: Momsrapport, ruta: MomsRuta) =>
+  rapport.rutor.get(ruta) ?? 0;
+
+export function momsrader(
+  rapport: Momsrapport,
+  rutor: Array<MomsRuta>,
+): Array<Momsrad> {
+  return rutor.map((ruta) => ({
+    ruta,
+    beskrivning: RUTA_BESKRIVNING[ruta],
+    belopp: rutbelopp(rapport, ruta),
+  }));
 }
 
 export function generateMomsrapport(year: string): Momsrapport {
@@ -62,57 +86,48 @@ export function generateMomsrapport(year: string): Momsrapport {
     return txDate.getFullYear() === parseInt(year) && !arMomsomforing(tx);
   });
 
-  let momspliktigForsaljning = 0;
-  let utgaendeMoms25 = 0;
-  let utgaendeMoms12 = 0;
-  let utgaendeMoms6 = 0;
-  let ingaendeMoms = 0;
+  // Summera signerat i ören: intäkter och utgående moms bokförs i kredit
+  // (negativt) och byter tecken, inköpsunderlag och ingående moms tas som de
+  // bokförs. Kreditnotor och rättelser dras därmed av korrekt.
+  const oren = new Map<MomsRuta, number>();
 
-  // Summera signerat: intäkter och utgående moms bokförs i kredit (negativt),
-  // så tecknet byts vid summeringen. Kreditnotor/rättelser dras då av korrekt.
-  periodTransactions.forEach((tx) => {
-    tx.postings.forEach((posting) => {
-      const account = posting.account;
-      const amount = posting.amount;
+  for (const tx of periodTransactions) {
+    for (const posting of tx.postings) {
+      const ruta = KONTO_RUTA[posting.account];
 
-      // Ruta 05: Momspliktig försäljning
-      if ([3000, 3001, 3002].includes(account)) {
-        momspliktigForsaljning -= amount;
+      if (!ruta) {
+        continue;
       }
 
-      // Ruta 10: Utgående moms 25 %
-      if (account === 2611) {
-        utgaendeMoms25 -= amount;
-      }
+      const ore = Math.round(posting.amount * 100);
 
-      // Ruta 11: Utgående moms 12 %
-      if (account === 2621) {
-        utgaendeMoms12 -= amount;
-      }
+      oren.set(
+        ruta,
+        (oren.get(ruta) ?? 0) + (arKreditnormal(ruta) ? -ore : ore),
+      );
+    }
+  }
 
-      // Ruta 12: Utgående moms 6 %
-      if (account === 2631) {
-        utgaendeMoms6 -= amount;
-      }
+  // Skatteverket tar bara hela kronor, så varje ruta avrundas här vid källan
+  // (0,50 uppåt). Ruta 49 räknas sedan ur de avrundade rutorna, annars kan
+  // raderna på skärmen sluta summera till nettot längst ned.
+  const rutor = new Map<MomsRuta, number>();
 
-      // Ruta 48: Ingående moms (bokförs i debet, positivt)
-      if (account === 2640) {
-        ingaendeMoms += amount;
-      }
-    });
-  });
+  for (const [ruta, ore] of oren) {
+    const kronor = Math.round(ore / 100);
 
-  // Calculate netto moms (output VAT - input VAT)
-  const nettoMoms = utgaendeMoms25 + utgaendeMoms12 + utgaendeMoms6 - ingaendeMoms;
+    if (kronor !== 0) {
+      rutor.set(ruta, kronor);
+    }
+  }
+
+  const summa = (valda: Array<MomsRuta>) =>
+    valda.reduce((total, ruta) => total + (rutor.get(ruta) ?? 0), 0);
 
   return {
     year,
-    momspliktigForsaljning,
-    utgaendeMoms25,
-    utgaendeMoms12,
-    utgaendeMoms6,
-    ingaendeMoms,
-    nettoMoms,
+    rutor,
+    nettoMoms: summa(UTGAENDE_RUTOR) - summa(INGAENDE_RUTOR),
   };
 }
 
@@ -217,9 +232,9 @@ export function skapaMomsbetalning(
 /**
  * Skapar momsomföringen som avslutar årets momsredovisning, samma verifikat
  * som Bokio bokför automatiskt:
- *  - varje momskonto (2611/2621/2631/2640) nollas på öret,
- *  - nettot bokförs i hela kronor (öretalen faller bort, SFL 22 kap 1 §)
- *    på 2650 i kredit (att betala) eller 1650 i debet (att återfå),
+ *  - varje momskonto som deklarationen läser från nollas på öret,
+ *  - nettot bokförs i hela kronor på 2650 i kredit (att betala) eller 1650
+ *    i debet (att återfå) — samma belopp som ruta 49 i rapporten,
  *  - öresgapet balanseras på 3740.
  *
  * Returnerar null om det inte finns någon moms att omföra.
@@ -267,9 +282,11 @@ export function skapaMomsomforing(year: string): Transaction | null {
     return null;
   }
 
-  // Positivt netto = moms att betala. Öretalen faller bort (trunkering mot
-  // noll), så 2650/1650 alltid matchar beloppet i deklarationen.
-  const deklareratOre = Math.trunc(nettoOre / 100) * 100;
+  // Positivt netto = moms att betala. Beloppet hämtas ur rapportens ruta 49
+  // i stället för att avrundas här på nytt, så att 2650/1650 alltid är exakt
+  // det som fylls i deklarationen — även när rutornas egna avrundningar
+  // sammantaget drar iväg något öre från råsaldot.
+  const deklareratOre = Math.round(generateMomsrapport(year).nettoMoms * 100);
 
   if (deklareratOre > 0) {
     postings.push(posting(REDOVISNINGSKONTO_MOMS, -deklareratOre));

@@ -68,4 +68,11 @@ const signals = {
   fileName,
 };
 
-signalsDevtool.init({ signals, effect });
+// Devtool-providern kopplar upp sig mot Chrome-tilläggets port via den globala
+// `chrome`. Den saknas i Firefox, Safari och Node (testerna), och providerns
+// `chrome?.runtime` skyddar bara mot att `runtime` fattas — inte mot att hela
+// identifieraren är odeklarerad. Utan vakten kastar modulen redan vid import
+// och tar hela appen med sig.
+if ("chrome" in globalThis) {
+  signalsDevtool.init({ signals, effect });
+}
