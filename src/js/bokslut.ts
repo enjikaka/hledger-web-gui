@@ -45,8 +45,9 @@ export function beraknaArsresultatOre(year: string): number {
     }
   }
 
-  // Intäkter bokförs i kredit (negativt) — vinst blir positiv efter teckenbyte
-  return -ore;
+  // Intäkter bokförs i kredit (negativt) — vinst blir positiv efter teckenbyte.
+  // `ore === 0` fångar -0, som annars läcker ut som "−0 kr" i formatteringen.
+  return ore === 0 ? 0 : -ore;
 }
 
 export function harArsresultat(year: string): boolean {
