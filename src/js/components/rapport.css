@@ -26,7 +26,13 @@ tfoot td {
   border-block-start: 1px solid currentColor;
 }
 
-.differens {
+.differens,
+.varning {
   font-weight: bold;
   color: #b3261e;
+}
+
+.konto-rad td {
+  color: color-mix(in srgb, currentColor 60%, transparent);
+  padding-inline-start: 1rem;
 }

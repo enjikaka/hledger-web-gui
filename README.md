@@ -106,3 +106,11 @@ Works in all modern browsers that support:
 - CSS Grid and Flexbox
 - Web Components
 - Constructable Stylesheets 
+## License
+
+Licensed under the [GNU AGPL-3.0-or-later](LICENSE).
+
+Parts of the Swedish tax report logic (BAS account ranges, SKV form mappings)
+are informed by [accounted](https://github.com/erp-mafia/accounted)
+(gnubok, Copyright (C) 2025-2026 Jakob Wennberg, AGPL-3.0), whose license this
+project shares so code can be reused directly.
