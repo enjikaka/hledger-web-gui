@@ -15,6 +15,14 @@ export type Mall = {
 
 const INGAENDE_MOMS = 2640;
 
+/** Valbara kapitalkällor för köp/försäljning. Privata betalningar (t.ex.
+ *  Granngården på privat kreditkort) bokförs mot 2018 Egna insättningar
+ *  i stället för att dras från bankkontot. */
+export const betalkonton = [
+  { konto: 1930, namn: "1930 Företagskonto" },
+  { konto: 2018, namn: "2018 Egen insättning (privat betalning)" },
+];
+
 const UTGAENDE_MOMS: Record<number, number> = {
   25: 2611,
   12: 2621,
@@ -84,7 +92,11 @@ export const mallar: Array<Mall> = [
  * Bygger postings från en mall och totalbelopp inkl. moms.
  * Räknar i hela ören så att raderna alltid summerar till exakt noll.
  */
-export function skapaPostings(mall: Mall, beloppInklMoms: number): Array<Posting> {
+export function skapaPostings(
+  mall: Mall,
+  beloppInklMoms: number,
+  betalkonto: number = mall.betalkonto,
+): Array<Posting> {
   const totalOre = Math.round(beloppInklMoms * 100);
   const momsOre = Math.round((totalOre * mall.momssats) / (1 + mall.momssats));
   const nettoOre = totalOre - momsOre;
@@ -100,7 +112,7 @@ export function skapaPostings(mall: Mall, beloppInklMoms: number): Array<Posting
     case "köp": {
       const rows = [posting(mall.konto, nettoOre)];
       if (momsOre !== 0) rows.push(posting(INGAENDE_MOMS, momsOre));
-      rows.push(posting(mall.betalkonto, -totalOre));
+      rows.push(posting(betalkonto, -totalOre));
       return rows;
     }
     case "försäljning": {
@@ -108,7 +120,7 @@ export function skapaPostings(mall: Mall, beloppInklMoms: number): Array<Posting
       if (momsOre !== 0) {
         rows.push(posting(UTGAENDE_MOMS[Math.round(mall.momssats * 100)], -momsOre));
       }
-      rows.push(posting(mall.betalkonto, totalOre));
+      rows.push(posting(betalkonto, totalOre));
       return rows;
     }
     case "insättning":
@@ -123,11 +135,12 @@ export function skapaTransaktion(
   datum: string,
   beloppInklMoms: number,
   beskrivning: string,
+  betalkonto: number = mall.betalkonto,
 ): Transaction {
   return {
     uuid: crypto.randomUUID(),
     date: datum,
     description: beskrivning || mall.beskrivning,
-    postings: skapaPostings(mall, beloppInklMoms),
+    postings: skapaPostings(mall, beloppInklMoms, betalkonto),
   };
 }
