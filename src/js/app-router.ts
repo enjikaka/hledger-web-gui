@@ -3,6 +3,7 @@ import AccountsPage from "./pages/accounts-page.ts";
 import BalansrapportPage from "./pages/balansrapport-page.ts";
 import IndexPage from "./pages/index-page.ts";
 import MomsrapportPage from "./pages/momsrapport-page.ts";
+import NebilagaPage from "./pages/nebilaga-page.ts";
 import TransactionsPage from "./pages/transactions-page.ts";
 import type { WebactThis } from "./webact-types.ts";
 
@@ -40,6 +41,9 @@ function AppRouter(this: WebactThis) {
           break;
         case "/balansrapport":
           hostElement.innerHTML = `<${BalansrapportPage}></${BalansrapportPage}>`;
+          break;
+        case "/ne-bilaga":
+          hostElement.innerHTML = `<${NebilagaPage}></${NebilagaPage}>`;
           break;
         default:
           hostElement.innerHTML = "Sidan finns ej.";
