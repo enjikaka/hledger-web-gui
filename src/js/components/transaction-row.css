@@ -37,3 +37,12 @@ summary::marker {
     background-color: rgb(240, 240, 240);
     width: 100%;
 }
+.vernr {
+    color: color-mix(in srgb, currentColor 55%, transparent);
+    font-size: 0.85em;
+    min-width: 3ch;
+}
+
+.vernr.saknas {
+    color: #b3261e;
+}

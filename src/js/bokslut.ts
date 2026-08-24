@@ -1,5 +1,6 @@
 import type { Posting, Transaction } from "./parse-journal-file";
 import { transactions } from "./signals";
+import { numrera } from "./verifikat";
 
 /**
  * Bokslutsfunktioner för enskild firma, samma automatiska verifikat som Bokio:
@@ -65,7 +66,7 @@ export function skapaArsresultatTransaktion(year: string): Transaction | null {
 
   // Vinst: 8999 i debet (nollar resultaträkningen), 2019 i kredit.
   // Förlust ger omvända tecken med samma formel.
-  return {
+  return numrera({
     uuid: crypto.randomUUID(),
     date: `${year}-12-31`,
     description: `Årets resultat ${year}`,
@@ -73,7 +74,7 @@ export function skapaArsresultatTransaktion(year: string): Transaction | null {
       posting(ARETS_RESULTAT, resultatOre),
       posting(ARETS_RESULTAT_EK, -resultatOre),
     ],
-  };
+  });
 }
 
 /** Nollningen för år X bokförs 1 jan år X+1 och rör 2010 plus underkonton. */
@@ -132,10 +133,10 @@ export function skapaNollningTransaktion(year: string): Transaction | null {
 
   postings.push(posting(EGET_KAPITAL, summaOre));
 
-  return {
+  return numrera({
     uuid: crypto.randomUUID(),
     date: `${parseInt(year, 10) + 1}-01-01`,
     description: `Nollställning av eget kapital ${year}`,
     postings,
-  };
+  });
 }

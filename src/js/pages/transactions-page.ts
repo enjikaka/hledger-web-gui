@@ -2,6 +2,7 @@ import { registerFunctionComponent } from "webact";
 
 import "../components/new-transaction.ts";
 import "../components/transactions-list.ts";
+import "../components/verifikat-serie.ts";
 import type { WebactThis } from "../webact-types.ts";
 
 function TransactionsPage(this: WebactThis) {
@@ -13,6 +14,7 @@ function TransactionsPage(this: WebactThis) {
       <summary>Ny transaktion</summary>
       <new-transaction></new-transaction>
     </details>
+    <verifikat-serie></verifikat-serie>
     <transactions-list></transactions-list>
   `;
 }

@@ -63,6 +63,9 @@ class TransactionRow extends Component {
                     <div class="col">
                       <div class="row">
                         <div class="date mono" title="${dateFormatter.format(new Date(tsx?.date))}">${tsx?.date.split('-').slice(1).join('-')}</div>
+                        ${tsx.code
+                          ? `<div class="vernr mono" title="Verifikationsnummer">${tsx.code}</div>`
+                          : `<div class="vernr saknas mono" title="Verifikationsnummer saknas">—</div>`}
                         <div class="title">${title}</div>
                       </div>
                       <div class="row">

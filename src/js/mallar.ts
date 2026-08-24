@@ -1,4 +1,5 @@
 import type { Posting, Transaction } from "./parse-journal-file";
+import { numrera } from "./verifikat";
 
 export type MallTyp = "köp" | "försäljning" | "insättning" | "uttag";
 
@@ -137,10 +138,10 @@ export function skapaTransaktion(
   beskrivning: string,
   betalkonto: number = mall.betalkonto,
 ): Transaction {
-  return {
+  return numrera({
     uuid: crypto.randomUUID(),
     date: datum,
     description: beskrivning || mall.beskrivning,
     postings: skapaPostings(mall, beloppInklMoms, betalkonto),
-  };
+  });
 }

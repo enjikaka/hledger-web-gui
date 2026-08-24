@@ -31,6 +31,11 @@ tr.grupp td {
   padding-block-start: 0.75rem;
 }
 
+tr.summa td {
+  font-weight: bold;
+  border-block-start: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+}
+
 .manuell {
   font-size: 0.8em;
   color: color-mix(in srgb, currentColor 60%, transparent);

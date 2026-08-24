@@ -1,6 +1,12 @@
 import { effect } from "@preact/signals-core";
 import { Component, registerComponent } from "webact";
-import { generateNeBilaga, MANUELLA_NE_RUTOR, type NeRad } from "../ne-bilaga";
+import {
+  generateNeBilaga,
+  MANUELLA_NE_RUTOR,
+  type NeBilaga,
+  type NeJusteringsrad,
+  type NeRad,
+} from "../ne-bilaga";
 import { selectedYear } from "../signals";
 
 import styles from "./rapport.css?inline";
@@ -73,6 +79,55 @@ function tabell(rubrik: string, rader: Array<NeRad>): string {
   `;
 }
 
+function justeringsRad(rad: NeJusteringsrad): string {
+  const kontoRader = rad.konton
+    .map(
+      (konto) => html`
+        <tr class="konto-rad">
+          <td></td>
+          <td>${konto.konto} ${konto.namn}</td>
+          <td class="amount">${kr(konto.belopp)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  return html`
+    <tr class="${rad.summa ? "summa" : ""}">
+      <td>${rad.ruta}</td>
+      <td>
+        ${rad.beskrivning}
+        ${rad.manuell ? `<span class="manuell">fylls i manuellt</span>` : ""}
+      </td>
+      <td class="amount">${kr(rad.belopp)}</td>
+    </tr>
+    ${kontoRader}
+  `;
+}
+
+function justeringsTabell(rapport: NeBilaga): string {
+  return html`
+    <table class="mono">
+      <caption>Skattemässiga justeringar ${rapport.year}</caption>
+      <thead>
+        <tr>
+          <th>Ruta</th>
+          <th>Beskrivning</th>
+          <th class="amount">Belopp</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rapport.justeringar.map(justeringsRad).join("")}
+      </tbody>
+    </table>
+    <p class="hint">
+      Rutor som inte kan räknas fram ur bokföringen fylls i för hand direkt i
+      Skatteverkets e-tjänst. R24 och framåt finns bara på NE-bilagan
+      (huvudverksamheten) — NEA-bilagan slutar vid R22/R23.
+    </p>
+  `;
+}
+
 class RapportNe extends Component {
   componentDidMount() {
     effect(() => {
@@ -96,6 +151,7 @@ class RapportNe extends Component {
             </tr>
           </tfoot>
         </table>
+        ${justeringsTabell(rapport)}
         ${rapport.varningar
           .map((varning) => html`<p class="varning">Obs! ${varning}</p>`)
           .join("")}

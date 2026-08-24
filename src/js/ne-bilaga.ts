@@ -6,6 +6,12 @@ import { aliases, transactions } from "./signals";
  * Räkenskapsschemat R1–R11: BAS-kontosaldon mappas till blankettens rutor
  * enligt BAS-kontogruppens kopplingstabell "NE - Inkomst av näringsverksamhet,
  * Enskilda näringsidkare" (bas.se/kontoplaner/sru/).
+ *
+ * Skattemässiga justeringar R12–R48 (SKV 2161): R12 förs över från R11 och
+ * R13 räknas fram ur bokföringen (ej avdragsgilla kostnader). Summorutorna
+ * R17, R21, R29, R33, R35, R42 och R47/R48 räknas ut längs kedjan; övriga
+ * rutor fylls i för hand i deklarationen. Rutorna R24 och framåt finns bara
+ * på NE-bilagan — NEA-bilagan (underverksamheten) slutar vid R22/R23.
  */
 
 export type NeRuta =
@@ -33,12 +39,62 @@ export type NeRad = {
   konton: Array<NeKontoRad>;
 };
 
+/** Justeringsrutor som fyller i belopp (summorutorna räknas fram). */
+export type NeJusteringsRuta =
+  | "R13"
+  | "R14"
+  | "R15"
+  | "R16"
+  | "R18"
+  | "R19"
+  | "R20"
+  | "R22"
+  | "R23"
+  | "R24"
+  | "R25"
+  | "R26"
+  | "R27"
+  | "R28"
+  | "R30"
+  | "R31"
+  | "R32"
+  | "R34"
+  | "R36"
+  | "R37"
+  | "R38"
+  | "R39"
+  | "R40"
+  | "R41"
+  | "R43"
+  | "R44"
+  | "R45"
+  | "R46";
+
+/** En rad i avsnittet "Skattemässiga justeringar", i blankettordning. */
+export type NeJusteringsrad = {
+  ruta: string;
+  beskrivning: string;
+  /** Ifyllnadsbelopp för justeringsrutor (alltid positivt), ackumulerad
+   *  summa för summorutor. */
+  belopp: number;
+  /** Summorutorna R12, R17, R21, R29, R33, R35, R42 och R47/R48. */
+  summa: boolean;
+  /** true = kan inte räknas fram ur bokföringen, fylls i för hand. */
+  manuell: boolean;
+  konton: Array<NeKontoRad>;
+};
+
 export type NeBilaga = {
   year: string;
   intakter: Array<NeRad>; // R1–R4
   kostnader: Array<NeRad>; // R5–R10
   /** R11 — intäkter minus kostnader. Positivt = vinst. */
   bokfortResultat: number;
+  /** Skattemässiga justeringar R12–R48, i blankettordning. */
+  justeringar: Array<NeJusteringsrad>;
+  /** Skattemässigt resultat efter R12–R46. Positivt = R47 överskott,
+   *  negativt = R48 underskott. */
+  skattemassigtResultat: number;
   varningar: Array<string>;
 };
 
@@ -103,8 +159,11 @@ const NE_MAPPNINGAR: Array<NeMappning> = [
   {
     ruta: "R6",
     beskrivning: "Övriga externa kostnader",
+    // BAS kopplingstabell NE_EJ_K1_17: R6 = 50xx–69xx. Taket ska alltså
+    // inte gå vid 6990 — 6991–6999 (bl.a. 6992 ej avdragsgilla kostnader)
+    // hör hemma här.
     intervall: [
-      [5000, 6990],
+      [5000, 6999],
       [7970, 7970],
     ],
     kostnad: true,
@@ -149,6 +208,183 @@ function hittaMappning(konto: number): NeMappning | undefined {
 
 /** Resultatkonto = 3000–8999. Konton utanför hör till balansräkningen. */
 const arResultatkonto = (konto: number) => konto >= 3000 && konto <= 8999;
+
+/**
+ * Bokförda kostnader som inte är avdragsgilla läggs tillbaka i R13
+ * (Skatteverkets exempel: representation, föreningsavgifter, böter och
+ * skattetillägg). Kontona ligger kvar i sina räkenskapsschemarutor —
+ * R13 är en återläggning ovanpå schemat, ingen omflyttning.
+ *
+ * 6072 (representation) och 7632 (personalrepresentation) är uttryckligen
+ * dubbelmappade i BAS kopplingstabell ("R6/R7 + NE sid. 2"); 6982
+ * (föreningsavgifter), 6992 (övriga kostnader, t.ex. böter och
+ * skattetillägg) och 7622 (sjuk- och hälsovård) bär namnet "ej
+ * avdragsgill/a" i BAS-kontoplanen.
+ */
+const EJ_AVDRAGSGILLA = [6072, 6982, 6992, 7622, 7632];
+
+/** Bokförda intäkter som inte ska tas upp dras av i R14. 8314 Skattefria
+ *  ränteintäkter är dubbelmappad i BAS kopplingstabell ("R4 + NE sid. 2"). */
+const EJ_BESKATTBARA_INTAKTER = [8314];
+
+type JusteringsSpec = {
+  ruta: NeJusteringsRuta;
+  beskrivning: string;
+  /** +1 ökar det skattemässiga resultatet, −1 minskar. */
+  tecken: 1 | -1;
+};
+
+/** Justeringsrutorna i blankettordning, med tecknet från SKV 2161. */
+const JUSTERINGAR: Array<JusteringsSpec> = [
+  { ruta: "R13", beskrivning: "Bokförda kostnader som inte ska dras av", tecken: 1 },
+  { ruta: "R14", beskrivning: "Bokförda intäkter som inte ska tas upp", tecken: -1 },
+  { ruta: "R15", beskrivning: "Intäkter som inte bokförts men som ska tas upp", tecken: 1 },
+  { ruta: "R16", beskrivning: "Kostnader som inte bokförts men som ska dras av", tecken: -1 },
+  { ruta: "R18", beskrivning: "Underskott från gemensam verksamhet eller NEA-bilaga", tecken: -1 },
+  { ruta: "R19", beskrivning: "Överskott från gemensam verksamhet eller NEA-bilaga", tecken: 1 },
+  { ruta: "R20", beskrivning: "Andel till medhjälpande make", tecken: -1 },
+  { ruta: "R22", beskrivning: "Övriga skattemässiga justeringar – kostnader", tecken: -1 },
+  { ruta: "R23", beskrivning: "Övriga skattemässiga justeringar – intäkter", tecken: 1 },
+  { ruta: "R24", beskrivning: "Outnyttjat underskott från föregående beskattningsår", tecken: -1 },
+  { ruta: "R25", beskrivning: "Skogs- och substansminskningsavdrag enligt bilaga N8", tecken: -1 },
+  { ruta: "R26", beskrivning: "Återföring av värdeminskningsavdrag m.m. vid försäljning av näringsfastighet", tecken: 1 },
+  { ruta: "R27", beskrivning: "Uttag från skogs-, skogsskade- eller upphovsmannakonto", tecken: 1 },
+  { ruta: "R28", beskrivning: "Inbetalning till skogs-, skogsskade- eller upphovsmannakonto", tecken: -1 },
+  { ruta: "R30", beskrivning: "Positiv räntefördelning", tecken: -1 },
+  { ruta: "R31", beskrivning: "Negativ räntefördelning", tecken: 1 },
+  { ruta: "R32", beskrivning: "Återföring av periodiseringsfond", tecken: 1 },
+  { ruta: "R34", beskrivning: "Avsättning till periodiseringsfond (högst 30 % av R33)", tecken: -1 },
+  { ruta: "R36", beskrivning: "Ökning av expansionsfond", tecken: -1 },
+  { ruta: "R37", beskrivning: "Minskning av expansionsfond", tecken: 1 },
+  { ruta: "R38", beskrivning: "Avdrag för pensionssparande", tecken: -1 },
+  { ruta: "R39", beskrivning: "Särskild löneskatt på pensionssparavdrag (24,26 % av R38)", tecken: -1 },
+  { ruta: "R40", beskrivning: "Medgivet avdrag för egenavgifter och särskild löneskatt föregående år", tecken: 1 },
+  { ruta: "R41", beskrivning: "Påförda egenavgifter och särskild löneskatt föregående år", tecken: -1 },
+  { ruta: "R43", beskrivning: "Årets beräknade avdrag för egenavgifter och särskild löneskatt", tecken: -1 },
+  { ruta: "R44", beskrivning: "Sjukpenning som hör till näringsverksamheten", tecken: 1 },
+  { ruta: "R45", beskrivning: "Allmänt avdrag", tecken: 1 },
+  { ruta: "R46", beskrivning: "Underskott som utnyttjas i kapital", tecken: 1 },
+];
+
+/** Summorutorna och var i kedjan de ligger (efter vilken justeringsruta). */
+const SUMRUTOR: Array<{ efter: NeJusteringsRuta | "R12"; ruta: string; beskrivning: string }> = [
+  { efter: "R12", ruta: "R12", beskrivning: "Bokfört resultat" },
+  { efter: "R16", ruta: "R17", beskrivning: "Sammanlagt resultat av verksamheten" },
+  { efter: "R20", ruta: "R21", beskrivning: "Min andel av resultatet från verksamheten/erna" },
+  { efter: "R28", ruta: "R29", beskrivning: "Överskott/underskott före räntefördelning" },
+  { efter: "R32", ruta: "R33", beskrivning: "Överskott/underskott före avsättning till periodiseringsfond" },
+  { efter: "R34", ruta: "R35", beskrivning: "Överskott/underskott före ökning av expansionsfond" },
+  { efter: "R41", ruta: "R42", beskrivning: "Överskott/underskott före årets avdrag för egenavgifter" },
+];
+
+/**
+ * Bygger avsnittet "Skattemässiga justeringar" (R12–R48) ur bokfört
+ * resultat och saldon. Bara R13 och R14 räknas fram ur kontosaldon —
+ * resten är manuella tills dess att egenavgifter, räntefördelning och
+ * fonder implementerats (se PLAN.md).
+ */
+function byggJusteringar(
+  saldon: Map<number, number>,
+  bokfortResultat: number,
+): { rader: Array<NeJusteringsrad>; skattemassigtResultat: number } {
+  const kontonamn = (konto: number) =>
+    aliases.value.find((alias) => alias.id === konto)?.to ?? "";
+
+  const beraknade: Array<{
+    ruta: NeJusteringsRuta;
+    konton: Array<number>;
+    /** Kostnader bokförs i debet, intäkter i kredit — ifyllnadsbeloppet
+     *  på blanketten är alltid positivt. */
+    kostnad: boolean;
+  }> = [
+    { ruta: "R13", konton: EJ_AVDRAGSGILLA, kostnad: true },
+    { ruta: "R14", konton: EJ_BESKATTBARA_INTAKTER, kostnad: false },
+  ];
+
+  const beraknat = new Map<NeJusteringsRuta, NeJusteringsrad>();
+
+  for (const { ruta, konton, kostnad } of beraknade) {
+    let summa = 0;
+    const kontoRader: Array<NeKontoRad> = [];
+
+    for (const konto of konton) {
+      const saldo = saldon.get(konto) ?? 0;
+
+      if (Math.abs(saldo) < 0.005) {
+        continue;
+      }
+
+      const belopp = kostnad ? saldo : -saldo;
+      summa += belopp;
+      kontoRader.push({
+        konto,
+        namn: kontonamn(konto),
+        belopp: Math.round(belopp),
+      });
+    }
+
+    beraknat.set(ruta, {
+      ruta,
+      beskrivning: "",
+      belopp: Math.round(summa),
+      summa: false,
+      manuell: false,
+      konton: kontoRader,
+    });
+  }
+
+  const rader: Array<NeJusteringsrad> = [];
+  let ackumulerat = bokfortResultat;
+  let summaIndex = 0;
+
+  const skjutUtSummorFramtill = (efter: string) => {
+    while (
+      summaIndex < SUMRUTOR.length &&
+      SUMRUTOR[summaIndex].efter === efter
+    ) {
+      const summa = SUMRUTOR[summaIndex++];
+      rader.push({
+        ruta: summa.ruta,
+        beskrivning: summa.beskrivning,
+        belopp: ackumulerat,
+        summa: true,
+        manuell: false,
+        konton: [],
+      });
+    }
+  };
+
+  skjutUtSummorFramtill("R12");
+
+  for (const spec of JUSTERINGAR) {
+    const rad = beraknat.get(spec.ruta) ?? {
+      ruta: spec.ruta,
+      beskrivning: "",
+      belopp: 0,
+      summa: false,
+      manuell: true,
+      konton: [],
+    };
+
+    rad.beskrivning = spec.beskrivning;
+    ackumulerat += spec.tecken * rad.belopp;
+    rader.push(rad);
+    skjutUtSummorFramtill(spec.ruta);
+  }
+
+  // R47/R48 — samma tal, tecknet avgör vilken ruta som fylls i
+  const overskott = ackumulerat >= 0;
+  rader.push({
+    ruta: overskott ? "R47" : "R48",
+    beskrivning: overskott ? "Överskott" : "Underskott",
+    belopp: Math.abs(ackumulerat),
+    summa: true,
+    manuell: false,
+    konton: [],
+  });
+
+  return { rader, skattemassigtResultat: ackumulerat };
+}
 
 /** Årets resultat — används i omföringen vid bokslut. En transaktion som rör
  *  8999 är en resultatdisposition och ska inte räknas med i räkenskapsschemat
@@ -248,11 +484,19 @@ export function generateNeBilaga(year: string): NeBilaga {
     );
   }
 
+  const bokfortResultat = summaIntakter - summaKostnader;
+  const { rader: justeringar, skattemassigtResultat } = byggJusteringar(
+    saldon,
+    bokfortResultat,
+  );
+
   return {
     year,
     intakter,
     kostnader,
-    bokfortResultat: summaIntakter - summaKostnader,
+    bokfortResultat,
+    justeringar,
+    skattemassigtResultat,
     varningar,
   };
 }

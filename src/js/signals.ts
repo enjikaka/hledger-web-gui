@@ -50,7 +50,10 @@ export const hledgerOutput = computed(() => {
         return `${FOUR_SPACES}${posting.account}${TWO_SPACES}${amount}`;
       });
 
-      return `${transaction.date} ${transaction.description}\n${postings.join("\n")}`;
+      // Verifikationsnumret skrivs i hledgers kodfält, direkt efter datumet
+      const kod = transaction.code ? `(${transaction.code}) ` : "";
+
+      return `${transaction.date} ${kod}${transaction.description}\n${postings.join("\n")}`;
     })
     .join("\n\n");
 

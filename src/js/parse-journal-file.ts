@@ -16,6 +16,9 @@ export type Posting = {
 export type Transaction = {
   uuid: string;
   date: string;
+  /** Verifikationsnummer, t.ex. "A12". Skrivs i hledgers kodfält —
+   *  `2025-03-01 (A12) Beskrivning` — som är avsett för just detta. */
+  code?: string;
   description: string;
   postings: Array<Posting>;
 };
@@ -130,11 +133,13 @@ export async function* parseJournalFile(
 
 function parseTransaction(lines: string[]): Transaction | null {
   const [header, ...postings] = lines;
-  const match = header.match(/^(\d{4}-\d{2}-\d{2})\s+(.+)$/);
+  // Kodfältet är valfritt: `2025-03-01 (A12) Beskrivning`
+  const match = header.match(/^(\d{4}-\d{2}-\d{2})\s+(?:\(([^)]*)\)\s*)?(.+)$/);
   if (!match) return null;
 
   const date = match[1];
-  const description = match[2].trim();
+  const code = match[2]?.trim();
+  const description = match[3].trim();
 
   const parsedPostings = postings
     .map((line: string) => line.trim())
@@ -157,6 +162,7 @@ function parseTransaction(lines: string[]): Transaction | null {
   return {
     uuid: crypto.randomUUID(),
     date,
+    ...(code ? { code } : {}),
     description,
     postings: parsedPostings,
   };

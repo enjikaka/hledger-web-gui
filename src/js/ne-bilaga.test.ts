@@ -3,7 +3,7 @@ import {
   skapaArsresultatTransaktion,
   beraknaArsresultatOre,
 } from "./bokslut";
-import { generateNeBilaga, type NeBilaga, type NeRuta } from "./ne-bilaga";
+import { generateNeBilaga, type NeBilaga, type NeJusteringsrad, type NeRuta } from "./ne-bilaga";
 import { transactions } from "./signals";
 import { laddaJournal, rensaJournal } from "./test-helpers";
 
@@ -28,6 +28,17 @@ function ruta(bilaga: NeBilaga, ruta: NeRuta): number {
   }
 
   return rad.belopp;
+}
+
+/** Rad i justeringsavsnittet, både justeringsrutor ("R13") och summorutor ("R17"). */
+function jrad(bilaga: NeBilaga, ruta: string): NeJusteringsrad {
+  const rad = bilaga.justeringar.find((r) => r.ruta === ruta);
+
+  if (!rad) {
+    throw new Error(`Ruta ${ruta} saknas bland justeringarna`);
+  }
+
+  return rad;
 }
 
 beforeEach(rensaJournal);
@@ -372,5 +383,168 @@ describe("avrundning och avgränsning", () => {
         belopp: 300,
       },
     ]);
+  });
+});
+
+describe("skattemässiga justeringar R12–R48", () => {
+  it("för över det bokförda resultatet från R11 till R12", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  10000.00 SEK
+    3000  -10000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025");
+
+    expect(jrad(bilaga, "R12").belopp).toBe(10000);
+    expect(jrad(bilaga, "R12").summa).toBe(true);
+  });
+
+  it("lägger tillbaka ej avdragsgilla kostnader i R13 — men de ligger kvar i räkenskapsschemat", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Representation, ej avdragsgill
+    6072  500.00 SEK
+    1930  -500.00 SEK`,
+        `2025-03-02 Böter
+    6992  300.00 SEK
+    1930  -300.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025");
+
+    // Kostnaderna är bokförda och hör hemma i R6 ...
+    expect(ruta(bilaga, "R6")).toBe(800);
+    expect(bilaga.bokfortResultat).toBe(-800);
+
+    // ... men får inte dras av, så de läggs tillbaka i R13
+    const r13 = jrad(bilaga, "R13");
+    expect(r13.belopp).toBe(800);
+    expect(r13.manuell).toBe(false);
+    expect(r13.konton).toEqual([
+      { konto: 6072, namn: "", belopp: 500 },
+      { konto: 6992, namn: "", belopp: 300 },
+    ]);
+
+    // R17 = R12 + R13: återläggningen tar ut det bokförda resultatet
+    expect(jrad(bilaga, "R17").belopp).toBe(0);
+    expect(bilaga.skattemassigtResultat).toBe(0);
+  });
+
+  it("räknar summorutorna längs kedjan när bara bokföringsbaserade rutor har belopp", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  10000.00 SEK
+    3000  -10000.00 SEK`,
+        `2025-03-02 Böter
+    6992  800.00 SEK
+    1930  -800.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025");
+
+    expect(jrad(bilaga, "R12").belopp).toBe(9200);
+    expect(jrad(bilaga, "R17").belopp).toBe(10000);
+    expect(jrad(bilaga, "R21").belopp).toBe(10000);
+    expect(jrad(bilaga, "R29").belopp).toBe(10000);
+    expect(jrad(bilaga, "R33").belopp).toBe(10000);
+    expect(jrad(bilaga, "R35").belopp).toBe(10000);
+    expect(jrad(bilaga, "R42").belopp).toBe(10000);
+    expect(jrad(bilaga, "R47").belopp).toBe(10000);
+    expect(bilaga.skattemassigtResultat).toBe(10000);
+  });
+
+  it("drar bort skattefria ränteintäkter (8314) i R14 — men de ligger kvar i R4", async () => {
+    await laddaJournal(
+      journal(
+        `2025-12-31 Skattefri ränta
+    1930  200.00 SEK
+    8314  -200.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025");
+
+    // Intäkten är bokförd och syns i R4 ...
+    expect(ruta(bilaga, "R4")).toBe(200);
+
+    // ... men ska inte beskattas, så den dras bort i R14
+    const r14 = jrad(bilaga, "R14");
+    expect(r14.belopp).toBe(200);
+    expect(r14.manuell).toBe(false);
+    expect(r14.konton).toEqual([{ konto: 8314, namn: "", belopp: 200 }]);
+
+    // R17 = R12 − R14: intäkten påverkar inte det skattemässiga resultatet
+    expect(jrad(bilaga, "R17").belopp).toBe(0);
+  });
+
+  it("markerar rutor utan bokföringsunderlag som manuella med belopp 0", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  10000.00 SEK
+    3000  -10000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025");
+
+    for (const ruta of ["R15", "R16", "R18", "R24", "R34", "R40", "R43"]) {
+      const rad = jrad(bilaga, ruta);
+      expect(rad.manuell).toBe(true);
+      expect(rad.belopp).toBe(0);
+      expect(rad.konton).toEqual([]);
+    }
+  });
+
+  it("visar R47 Överskott vid vinst och R48 Underskott vid förlust", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  10000.00 SEK
+    3000  -10000.00 SEK`,
+      ),
+    );
+
+    const vinst = generateNeBilaga("2025");
+    expect(vinst.justeringar.at(-1)!.ruta).toBe("R47");
+    expect(vinst.justeringar.at(-1)!.belopp).toBe(10000);
+
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  10000.00 SEK
+    3000  -10000.00 SEK`,
+        `2025-04-01 Inköp
+    4000  15000.00 SEK
+    1930  -15000.00 SEK`,
+      ),
+    );
+
+    const forlust = generateNeBilaga("2025");
+    expect(forlust.justeringar.at(-1)!.ruta).toBe("R48");
+    expect(forlust.justeringar.at(-1)!.belopp).toBe(5000);
+    expect(forlust.skattemassigtResultat).toBe(-5000);
+  });
+
+  it("håller isär åren vid R13", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Böter 2025
+    6992  300.00 SEK
+    1930  -300.00 SEK`,
+        `2026-03-01 Böter 2026
+    6992  700.00 SEK
+    1930  -700.00 SEK`,
+      ),
+    );
+
+    expect(jrad(generateNeBilaga("2025"), "R13").belopp).toBe(300);
+    expect(jrad(generateNeBilaga("2026"), "R13").belopp).toBe(700);
   });
 });

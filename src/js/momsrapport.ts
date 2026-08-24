@@ -9,6 +9,7 @@ import {
 } from "./moms-rutor";
 import type { Posting, Transaction } from "./parse-journal-file";
 import { transactions } from "./signals";
+import { numrera } from "./verifikat";
 
 /** Redovisningskonto för moms — nettot att betala bokförs hit i kredit. */
 export const REDOVISNINGSKONTO_MOMS = 2650;
@@ -216,7 +217,7 @@ export function skapaMomsbetalning(
     currency: "SEK",
   });
 
-  return {
+  return numrera({
     uuid: crypto.randomUUID(),
     date: datum,
     description: skuld.attBetala
@@ -226,7 +227,7 @@ export function skapaMomsbetalning(
       posting(skuld.konto, -skuld.saldoOre),
       posting(motkonto, skuld.saldoOre),
     ],
-  };
+  });
 }
 
 /**
@@ -300,10 +301,10 @@ export function skapaMomsomforing(year: string): Transaction | null {
     postings.push(posting(ORESUTJAMNING, -gapOre));
   }
 
-  return {
+  return numrera({
     uuid: crypto.randomUUID(),
     date: `${year}-12-31`,
     description: `Momsredovisning ${year}`,
     postings,
-  };
+  });
 }
