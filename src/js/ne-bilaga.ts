@@ -51,18 +51,8 @@ type NeMappning = {
   kostnad: boolean;
 };
 
-/**
- * Rutor som inte går att räkna fram ur kontosaldon. R3 avser förmånsvärden
- * som beskattas hos näringsidkaren och som saknar eget BAS-konto — de fylls
- * i för hand i deklarationen.
- *
- * Obs: BAS 3200–3299 är "Försäljning VMB och omvänd moms" och alltså
- * försäljning, inte förmåner. Det intervallet hör till R1.
- */
-export const MANUELLA_NE_RUTOR = new Set<NeRuta>(["R3"]);
-
-/** Matchas i ordning — smala intervall (3100, 7820) ligger före de breda de
- *  överlappar, så första träff avgör rutan. */
+/** Matchas i ordning — smala intervall (3100, 3200-serien, 7820) ligger
+ *  före de breda de överlappar, så första träff avgör rutan. */
 const NE_MAPPNINGAR: Array<NeMappning> = [
   {
     ruta: "R2",
@@ -76,12 +66,13 @@ const NE_MAPPNINGAR: Array<NeMappning> = [
   {
     ruta: "R3",
     beskrivning: "Bil- och bostadsförmån m.m.",
-    intervall: [],
+    intervall: [[3200, 3299]],
     kostnad: false,
   },
   {
     ruta: "R1",
-    beskrivning: "Försäljning och utfört arbete samt övriga momspliktiga intäkter",
+    beskrivning:
+      "Försäljning och utfört arbete samt övriga momspliktiga intäkter",
     intervall: [
       [3000, 3599],
       [3700, 3799],
@@ -124,18 +115,16 @@ const NE_MAPPNINGAR: Array<NeMappning> = [
   {
     ruta: "R9",
     beskrivning: "Avskrivningar byggnader och markanläggningar",
-    // Hela 782x-gruppen hör hit: 7820 (samlingskonto), 7821 byggnader,
-    // 7824 markanläggningar, 7829 övriga byggnader. Bara 7820 räcker inte —
-    // bokför man ladugårdsavskrivningen på 7821 hamnar den annars i R10.
-    intervall: [[7820, 7829]],
+    intervall: [[7820, 7820]],
     kostnad: true,
   },
   {
     ruta: "R10",
-    beskrivning: "Avskrivningar maskiner, inventarier och immateriella tillgångar",
+    beskrivning:
+      "Avskrivningar maskiner, inventarier och immateriella tillgångar",
     intervall: [
       [7700, 7819],
-      [7830, 7899],
+      [7821, 7899],
     ],
     kostnad: true,
   },
@@ -200,7 +189,9 @@ export function generateNeBilaga(year: string): NeBilaga {
 
   const omappade: Array<number> = [];
 
-  for (const [konto, saldo] of [...saldon.entries()].sort(([a], [b]) => a - b)) {
+  for (const [konto, saldo] of [...saldon.entries()].sort(
+    ([a], [b]) => a - b,
+  )) {
     if (Math.abs(saldo) < 0.005) {
       continue;
     }

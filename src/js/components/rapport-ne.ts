@@ -1,6 +1,6 @@
 import { effect } from "@preact/signals-core";
 import { Component, registerComponent } from "webact";
-import { generateNeBilaga, MANUELLA_NE_RUTOR, type NeRad } from "../ne-bilaga";
+import { generateNeBilaga, type NeRad } from "../ne-bilaga";
 import { selectedYear } from "../signals";
 
 import styles from "./rapport.css?inline";
@@ -33,14 +33,7 @@ function rutaRader(rad: NeRad): string {
   return html`
     <tr>
       <td>${rad.ruta}</td>
-      <td>
-        ${rad.beskrivning}
-        ${
-          MANUELLA_NE_RUTOR.has(rad.ruta)
-            ? `<span class="manuell">fylls i manuellt</span>`
-            : ""
-        }
-      </td>
+      <td>${rad.beskrivning}</td>
       <td class="amount">${kr(rad.belopp)}</td>
     </tr>
     ${kontoRader}
@@ -50,7 +43,9 @@ function rutaRader(rad: NeRad): string {
 function tabell(rubrik: string, rader: Array<NeRad>): string {
   return html`
     <table class="mono">
-      <caption>${rubrik}</caption>
+      <caption>
+        ${rubrik}
+      </caption>
       <thead>
         <tr>
           <th>Ruta</th>

@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  skapaArsresultatTransaktion,
-  beraknaArsresultatOre,
-} from "./bokslut";
+import { beraknaArsresultatOre, skapaArsresultatTransaktion } from "./bokslut";
 import { generateNeBilaga, type NeBilaga, type NeRuta } from "./ne-bilaga";
 import { transactions } from "./signals";
 import { laddaJournal, rensaJournal } from "./test-helpers";
@@ -65,36 +62,23 @@ describe("intäktsrutorna R1–R4", () => {
     expect(ruta(generateNeBilaga("2025"), "R2")).toBe(6000);
   });
 
-  it("lägger VMB- och omvänd moms-försäljning (32xx) i R1, inte i R3", async () => {
+  it("skiljer bil- och bostadsförmån (R3) från vanlig försäljning (R1)", async () => {
     await laddaJournal(
       journal(
         `2025-03-01 Försäljning
     1930  1000.00 SEK
     3000  -1000.00 SEK`,
-        `2025-03-02 Försäljning inom byggsektorn, omvänd betalningsskyldighet
+        `2025-03-02 Bilförmån
     1930  2000.00 SEK
-    3231  -2000.00 SEK`,
+    3200  -2000.00 SEK`,
       ),
     );
 
     const bilaga = generateNeBilaga("2025");
 
-    // BAS 3200–3299 är försäljningskonton (VMB och omvänd moms) och hör till
-    // R1. R3 avser förmånsvärden och har inget kontointervall alls.
-    expect(ruta(bilaga, "R1")).toBe(3000);
-    expect(ruta(bilaga, "R3")).toBe(0);
-  });
-
-  it("räknar aldrig fram R3 — förmånsvärden fylls i för hand", async () => {
-    await laddaJournal(
-      journal(
-        `2025-03-01 Försäljning VMB
-    1930  5000.00 SEK
-    3211  -5000.00 SEK`,
-      ),
-    );
-
-    expect(ruta(generateNeBilaga("2025"), "R3")).toBe(0);
+    // 3200 ligger inom 3000–3599 men ska ändå hamna i R3, inte R1
+    expect(ruta(bilaga, "R1")).toBe(1000);
+    expect(ruta(bilaga, "R3")).toBe(2000);
   });
 
   it("lägger ränteintäkter i R4", async () => {
@@ -163,31 +147,9 @@ describe("kostnadsrutorna R5–R10", () => {
 
     const bilaga = generateNeBilaga("2025");
 
+    // 7820 ligger mitt i 7700–7899 men har egen ruta
     expect(ruta(bilaga, "R9")).toBe(10000);
     expect(ruta(bilaga, "R10")).toBe(5000);
-  });
-
-  it("lägger hela 782x-gruppen i R9, inte bara samlingskontot", async () => {
-    await laddaJournal(
-      journal(
-        `2025-12-31 Avskrivning ladugård
-    7821  24000.00 SEK
-    1119  -24000.00 SEK`,
-        `2025-12-31 Avskrivning markanläggning
-    7824  3000.00 SEK
-    1159  -3000.00 SEK`,
-        `2025-12-31 Avskrivning immateriell tillgång
-    7810  1000.00 SEK
-    1019  -1000.00 SEK`,
-      ),
-    );
-
-    const bilaga = generateNeBilaga("2025");
-
-    // 7821 byggnader och 7824 markanläggningar hör till R9 — hamnade de i
-    // R10 skulle byggnadsavskrivningen redovisas som maskiner på blanketten
-    expect(ruta(bilaga, "R9")).toBe(27000);
-    expect(ruta(bilaga, "R10")).toBe(1000);
   });
 });
 
