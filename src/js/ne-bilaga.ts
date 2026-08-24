@@ -137,7 +137,8 @@ const NE_MAPPNINGAR: Array<NeMappning> = [
   },
   {
     ruta: "R1",
-    beskrivning: "Försäljning och utfört arbete samt övriga momspliktiga intäkter",
+    beskrivning:
+      "Försäljning och utfört arbete samt övriga momspliktiga intäkter",
     intervall: [
       [3000, 3599],
       [3700, 3799],
@@ -191,7 +192,8 @@ const NE_MAPPNINGAR: Array<NeMappning> = [
   },
   {
     ruta: "R10",
-    beskrivning: "Avskrivningar maskiner, inventarier och immateriella tillgångar",
+    beskrivning:
+      "Avskrivningar maskiner, inventarier och immateriella tillgångar",
     intervall: [
       [7700, 7819],
       [7830, 7899],
@@ -436,7 +438,9 @@ export function generateNeBilaga(year: string): NeBilaga {
 
   const omappade: Array<number> = [];
 
-  for (const [konto, saldo] of [...saldon.entries()].sort(([a], [b]) => a - b)) {
+  for (const [konto, saldo] of [...saldon.entries()].sort(
+    ([a], [b]) => a - b,
+  )) {
     if (Math.abs(saldo) < 0.005) {
       continue;
     }

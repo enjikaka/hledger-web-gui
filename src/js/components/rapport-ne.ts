@@ -56,7 +56,9 @@ function rutaRader(rad: NeRad): string {
 function tabell(rubrik: string, rader: Array<NeRad>): string {
   return html`
     <table class="mono">
-      <caption>${rubrik}</caption>
+      <caption>
+        ${rubrik}
+      </caption>
       <thead>
         <tr>
           <th>Ruta</th>
