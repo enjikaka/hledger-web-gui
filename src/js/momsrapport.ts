@@ -167,7 +167,10 @@ export function momsSkuld(): MomsSkuld | null {
   let omforingsAr: string | null = null;
 
   for (const tx of transactions.value) {
-    if (arMomsomforing(tx) && (!omforingsAr || tx.date.slice(0, 4) > omforingsAr)) {
+    if (
+      arMomsomforing(tx) &&
+      (!omforingsAr || tx.date.slice(0, 4) > omforingsAr)
+    ) {
       omforingsAr = tx.date.slice(0, 4);
     }
 

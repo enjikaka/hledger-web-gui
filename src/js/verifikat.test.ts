@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { skapaArsresultatTransaktion } from "./bokslut";
-import { skapaTransaktion, mallar } from "./mallar";
+import { mallar, skapaTransaktion } from "./mallar";
 import { skapaMomsomforing } from "./momsrapport";
 import { hledgerOutput, transactions } from "./signals";
 import { laddaJournal, rensaJournal } from "./test-helpers";
@@ -274,7 +274,10 @@ describe("granskaSerie", () => {
 
   it("hittar flera luckor", async () => {
     await laddaJournal(
-      journal(tx("2025-03-01", "A1", "Första"), tx("2025-03-05", "A5", "Femte")),
+      journal(
+        tx("2025-03-01", "A1", "Första"),
+        tx("2025-03-05", "A5", "Femte"),
+      ),
     );
 
     expect(granskaSerie("2025").luckor).toEqual([2, 3, 4]);

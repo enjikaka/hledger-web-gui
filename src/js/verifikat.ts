@@ -94,9 +94,7 @@ export type Serieproblem = {
  * gör att man kan lita på att inget verifikat fattas.
  */
 export function granskaSerie(year: string, serie = SERIE): Serieproblem {
-  const arets = transactions.value.filter(
-    (tx) => tx.date.slice(0, 4) === year,
-  );
+  const arets = transactions.value.filter((tx) => tx.date.slice(0, 4) === year);
 
   const nummer = arets
     .map((tx) => tolkaVerifikat(tx.code))

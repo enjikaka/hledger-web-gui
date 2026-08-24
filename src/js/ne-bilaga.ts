@@ -238,45 +238,152 @@ type JusteringsSpec = {
 
 /** Justeringsrutorna i blankettordning, med tecknet från SKV 2161. */
 const JUSTERINGAR: Array<JusteringsSpec> = [
-  { ruta: "R13", beskrivning: "Bokförda kostnader som inte ska dras av", tecken: 1 },
-  { ruta: "R14", beskrivning: "Bokförda intäkter som inte ska tas upp", tecken: -1 },
-  { ruta: "R15", beskrivning: "Intäkter som inte bokförts men som ska tas upp", tecken: 1 },
-  { ruta: "R16", beskrivning: "Kostnader som inte bokförts men som ska dras av", tecken: -1 },
-  { ruta: "R18", beskrivning: "Underskott från gemensam verksamhet eller NEA-bilaga", tecken: -1 },
-  { ruta: "R19", beskrivning: "Överskott från gemensam verksamhet eller NEA-bilaga", tecken: 1 },
+  {
+    ruta: "R13",
+    beskrivning: "Bokförda kostnader som inte ska dras av",
+    tecken: 1,
+  },
+  {
+    ruta: "R14",
+    beskrivning: "Bokförda intäkter som inte ska tas upp",
+    tecken: -1,
+  },
+  {
+    ruta: "R15",
+    beskrivning: "Intäkter som inte bokförts men som ska tas upp",
+    tecken: 1,
+  },
+  {
+    ruta: "R16",
+    beskrivning: "Kostnader som inte bokförts men som ska dras av",
+    tecken: -1,
+  },
+  {
+    ruta: "R18",
+    beskrivning: "Underskott från gemensam verksamhet eller NEA-bilaga",
+    tecken: -1,
+  },
+  {
+    ruta: "R19",
+    beskrivning: "Överskott från gemensam verksamhet eller NEA-bilaga",
+    tecken: 1,
+  },
   { ruta: "R20", beskrivning: "Andel till medhjälpande make", tecken: -1 },
-  { ruta: "R22", beskrivning: "Övriga skattemässiga justeringar – kostnader", tecken: -1 },
-  { ruta: "R23", beskrivning: "Övriga skattemässiga justeringar – intäkter", tecken: 1 },
-  { ruta: "R24", beskrivning: "Outnyttjat underskott från föregående beskattningsår", tecken: -1 },
-  { ruta: "R25", beskrivning: "Skogs- och substansminskningsavdrag enligt bilaga N8", tecken: -1 },
-  { ruta: "R26", beskrivning: "Återföring av värdeminskningsavdrag m.m. vid försäljning av näringsfastighet", tecken: 1 },
-  { ruta: "R27", beskrivning: "Uttag från skogs-, skogsskade- eller upphovsmannakonto", tecken: 1 },
-  { ruta: "R28", beskrivning: "Inbetalning till skogs-, skogsskade- eller upphovsmannakonto", tecken: -1 },
+  {
+    ruta: "R22",
+    beskrivning: "Övriga skattemässiga justeringar – kostnader",
+    tecken: -1,
+  },
+  {
+    ruta: "R23",
+    beskrivning: "Övriga skattemässiga justeringar – intäkter",
+    tecken: 1,
+  },
+  {
+    ruta: "R24",
+    beskrivning: "Outnyttjat underskott från föregående beskattningsår",
+    tecken: -1,
+  },
+  {
+    ruta: "R25",
+    beskrivning: "Skogs- och substansminskningsavdrag enligt bilaga N8",
+    tecken: -1,
+  },
+  {
+    ruta: "R26",
+    beskrivning:
+      "Återföring av värdeminskningsavdrag m.m. vid försäljning av näringsfastighet",
+    tecken: 1,
+  },
+  {
+    ruta: "R27",
+    beskrivning: "Uttag från skogs-, skogsskade- eller upphovsmannakonto",
+    tecken: 1,
+  },
+  {
+    ruta: "R28",
+    beskrivning: "Inbetalning till skogs-, skogsskade- eller upphovsmannakonto",
+    tecken: -1,
+  },
   { ruta: "R30", beskrivning: "Positiv räntefördelning", tecken: -1 },
   { ruta: "R31", beskrivning: "Negativ räntefördelning", tecken: 1 },
   { ruta: "R32", beskrivning: "Återföring av periodiseringsfond", tecken: 1 },
-  { ruta: "R34", beskrivning: "Avsättning till periodiseringsfond (högst 30 % av R33)", tecken: -1 },
+  {
+    ruta: "R34",
+    beskrivning: "Avsättning till periodiseringsfond (högst 30 % av R33)",
+    tecken: -1,
+  },
   { ruta: "R36", beskrivning: "Ökning av expansionsfond", tecken: -1 },
   { ruta: "R37", beskrivning: "Minskning av expansionsfond", tecken: 1 },
   { ruta: "R38", beskrivning: "Avdrag för pensionssparande", tecken: -1 },
-  { ruta: "R39", beskrivning: "Särskild löneskatt på pensionssparavdrag (24,26 % av R38)", tecken: -1 },
-  { ruta: "R40", beskrivning: "Medgivet avdrag för egenavgifter och särskild löneskatt föregående år", tecken: 1 },
-  { ruta: "R41", beskrivning: "Påförda egenavgifter och särskild löneskatt föregående år", tecken: -1 },
-  { ruta: "R43", beskrivning: "Årets beräknade avdrag för egenavgifter och särskild löneskatt", tecken: -1 },
-  { ruta: "R44", beskrivning: "Sjukpenning som hör till näringsverksamheten", tecken: 1 },
+  {
+    ruta: "R39",
+    beskrivning: "Särskild löneskatt på pensionssparavdrag (24,26 % av R38)",
+    tecken: -1,
+  },
+  {
+    ruta: "R40",
+    beskrivning:
+      "Medgivet avdrag för egenavgifter och särskild löneskatt föregående år",
+    tecken: 1,
+  },
+  {
+    ruta: "R41",
+    beskrivning: "Påförda egenavgifter och särskild löneskatt föregående år",
+    tecken: -1,
+  },
+  {
+    ruta: "R43",
+    beskrivning:
+      "Årets beräknade avdrag för egenavgifter och särskild löneskatt",
+    tecken: -1,
+  },
+  {
+    ruta: "R44",
+    beskrivning: "Sjukpenning som hör till näringsverksamheten",
+    tecken: 1,
+  },
   { ruta: "R45", beskrivning: "Allmänt avdrag", tecken: 1 },
   { ruta: "R46", beskrivning: "Underskott som utnyttjas i kapital", tecken: 1 },
 ];
 
 /** Summorutorna och var i kedjan de ligger (efter vilken justeringsruta). */
-const SUMRUTOR: Array<{ efter: NeJusteringsRuta | "R12"; ruta: string; beskrivning: string }> = [
+const SUMRUTOR: Array<{
+  efter: NeJusteringsRuta | "R12";
+  ruta: string;
+  beskrivning: string;
+}> = [
   { efter: "R12", ruta: "R12", beskrivning: "Bokfört resultat" },
-  { efter: "R16", ruta: "R17", beskrivning: "Sammanlagt resultat av verksamheten" },
-  { efter: "R20", ruta: "R21", beskrivning: "Min andel av resultatet från verksamheten/erna" },
-  { efter: "R28", ruta: "R29", beskrivning: "Överskott/underskott före räntefördelning" },
-  { efter: "R32", ruta: "R33", beskrivning: "Överskott/underskott före avsättning till periodiseringsfond" },
-  { efter: "R34", ruta: "R35", beskrivning: "Överskott/underskott före ökning av expansionsfond" },
-  { efter: "R41", ruta: "R42", beskrivning: "Överskott/underskott före årets avdrag för egenavgifter" },
+  {
+    efter: "R16",
+    ruta: "R17",
+    beskrivning: "Sammanlagt resultat av verksamheten",
+  },
+  {
+    efter: "R20",
+    ruta: "R21",
+    beskrivning: "Min andel av resultatet från verksamheten/erna",
+  },
+  {
+    efter: "R28",
+    ruta: "R29",
+    beskrivning: "Överskott/underskott före räntefördelning",
+  },
+  {
+    efter: "R32",
+    ruta: "R33",
+    beskrivning: "Överskott/underskott före avsättning till periodiseringsfond",
+  },
+  {
+    efter: "R34",
+    ruta: "R35",
+    beskrivning: "Överskott/underskott före ökning av expansionsfond",
+  },
+  {
+    efter: "R41",
+    ruta: "R42",
+    beskrivning: "Överskott/underskott före årets avdrag för egenavgifter",
+  },
 ];
 
 /**
@@ -438,6 +545,18 @@ export function generateNeBilaga(year: string): NeBilaga {
 
   const omappade: Array<number> = [];
 
+  // Alla NE_MAPPNINGAR-rutor är förhandskapade i rader, så detta kan
+  // inte misslyckas — kastar ändå istället för att lita på en !-assertion.
+  const radFor = (ruta: NeRuta): NeRad => {
+    const rad = rader.get(ruta);
+
+    if (!rad) {
+      throw new Error(`Intern fel: NE-ruta ${ruta} saknas i räkenskapsschemat`);
+    }
+
+    return rad;
+  };
+
   for (const [konto, saldo] of [...saldon.entries()].sort(
     ([a], [b]) => a - b,
   )) {
@@ -453,7 +572,7 @@ export function generateNeBilaga(year: string): NeBilaga {
     }
 
     const belopp = mappning.kostnad ? saldo : -saldo;
-    const rad = rader.get(mappning.ruta)!;
+    const rad = radFor(mappning.ruta);
 
     // Summera exakt — avrundas per ruta efter loopen, annars kan
     // öresavrundningar per konto driva iväg R11 från bokfört resultat
@@ -470,8 +589,7 @@ export function generateNeBilaga(year: string): NeBilaga {
     rad.belopp = Math.round(rad.belopp);
   }
 
-  const iOrdning = (rutor: Array<NeRuta>) =>
-    rutor.map((ruta) => rader.get(ruta)!);
+  const iOrdning = (rutor: Array<NeRuta>) => rutor.map(radFor);
 
   const intakter = iOrdning(["R1", "R2", "R3", "R4"]);
   const kostnader = iOrdning(["R5", "R6", "R7", "R8", "R9", "R10"]);

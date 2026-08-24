@@ -87,9 +87,7 @@ export function harNollning(year: string): boolean {
     }
 
     const konton = new Set(tx.postings.map((posting) => posting.account));
-    return (
-      konton.has(EGET_KAPITAL) && [...konton].some(arKapitalUnderkonto)
-    );
+    return konton.has(EGET_KAPITAL) && [...konton].some(arKapitalUnderkonto);
   });
 }
 

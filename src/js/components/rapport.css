@@ -33,7 +33,8 @@ tr.grupp td {
 
 tr.summa td {
   font-weight: bold;
-  border-block-start: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-block-start: 1px solid
+    color-mix(in srgb, currentColor 30%, transparent);
 }
 
 .manuell {

@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { beraknaArsresultatOre, skapaArsresultatTransaktion } from "./bokslut";
-import { generateNeBilaga, type NeBilaga, type NeRuta } from "./ne-bilaga";
+import {
+  generateNeBilaga,
+  type NeBilaga,
+  type NeJusteringsrad,
+  type NeRuta,
+} from "./ne-bilaga";
 import { transactions } from "./signals";
 import { laddaJournal, rensaJournal } from "./test-helpers";
 

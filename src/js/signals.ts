@@ -38,7 +38,9 @@ export const hledgerOutput = computed(() => {
     ? journalHeader.value.trimEnd()
     : [
         accounts.value.map((account) => `account ${account.name}`).join("\n"),
-        aliases.value.map((alias) => `alias ${alias.id} = ${alias.to}`).join("\n"),
+        aliases.value
+          .map((alias) => `alias ${alias.id} = ${alias.to}`)
+          .join("\n"),
       ]
         .filter(Boolean)
         .join("\n\n");
@@ -46,7 +48,8 @@ export const hledgerOutput = computed(() => {
   const transactionsHledger = transactions.value
     .map((transaction) => {
       const postings = transaction.postings.map((posting) => {
-        const amount = `${posting.amount.toFixed(2)} ${posting.currency}`.trimEnd();
+        const amount =
+          `${posting.amount.toFixed(2)} ${posting.currency}`.trimEnd();
         return `${FOUR_SPACES}${posting.account}${TWO_SPACES}${amount}`;
       });
 

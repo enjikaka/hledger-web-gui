@@ -119,15 +119,23 @@ export function skapaPostings(
     case "försäljning": {
       const rows = [posting(mall.konto, -nettoOre)];
       if (momsOre !== 0) {
-        rows.push(posting(UTGAENDE_MOMS[Math.round(mall.momssats * 100)], -momsOre));
+        rows.push(
+          posting(UTGAENDE_MOMS[Math.round(mall.momssats * 100)], -momsOre),
+        );
       }
       rows.push(posting(betalkonto, totalOre));
       return rows;
     }
     case "insättning":
-      return [posting(mall.betalkonto, totalOre), posting(mall.konto, -totalOre)];
+      return [
+        posting(mall.betalkonto, totalOre),
+        posting(mall.konto, -totalOre),
+      ];
     case "uttag":
-      return [posting(mall.konto, totalOre), posting(mall.betalkonto, -totalOre)];
+      return [
+        posting(mall.konto, totalOre),
+        posting(mall.betalkonto, -totalOre),
+      ];
   }
 }
 
