@@ -45,23 +45,31 @@ Sammanställt 2026-08-24 utifrån minnesanteckningar och genomgång av koden.
   (utan auto-återföring) när befintligt saldo överstiger taket — överskjutande
   belopp måste återföras till beskattning. Eget fält för kapitalunderlaget,
   som gäller vid årets utgång (räntefördelningens gäller föregående års).
+- **SRU-export av NE-bilagan** (port från accounted): INFO.SRU +
+  BLANKETTER.SRU i ISO 8859-1/CRLF via `<ne-export>` på NE-sidan.
+  Fältkoderna enligt Skatteverkets tekniska beskrivning 2025P4: R1–R10 =
+  7400–7403/7500–7505 (korsvaliderade mot BAS-kontogruppens officiella
+  kopplingstabell), R11 = 7440 och hela justeringskedjan R12–R48
+  (7600/7601/7700 … 7630/7730); konventionen 76xx = pluspost, 77xx =
+  minuspost stämmer med räkenskapskedjans tecken. Mellansummorutorna
+  (R17/R21/R29/R33/R35/R42) har inga koder — Skatteverket räknar dem.
+  Personnummer normaliseras till 12 siffror med sekeln härledd ur åldern;
+  genereringen vägrar vid ogiltiga uppgifter och preflight-kontrollerar
+  blankettblocket. Inmatningen (pnr/namn/postnr/postort) lever bara i minnet.
 
 ## Kvar ❌
 
-1. **SRU-export av NE-bilagan** — porta från accounted
-   `lib/reports/ne-bilaga/sru-generator.ts` (INFO.SRU/BLANKETTER.SRU,
-   ISO 8859-1, fältkoder R1–R11 = 7400–7403, 7500–7505, 7440; datum
-   7011/7012). Behåll upphovsrättsnotisen (gnubok, AGPL-3.0). OBS: ska
-   troligen även täcka R12–R48 nu när justeringarna finns.
-2. **K1-blanketten**.
-3. **SIE4-export?** — `verifikat.ts` är designad för det ("en SIE-fil per år
+1. **K1-blanketten**.
+2. **SIE4-export?** — `verifikat.ts` är designad för det ("en SIE-fil per år
    går att skapa rakt av") men ingen export finns. Bekräfta om den ska med.
-4. **README** — beskriver fortfarande den gamla generiska journalhanteraren;
-   uppdatera med moms/NE/bokslut.
+3. **README** — beskriver fortfarande den gamla generiska journalhanteraren;
+   uppdatera med moms/NE/bokslut/SRU.
 
-## Prioritering inför deklarationen
+## Prioritering
 
-1 (SRU-exporten är den enda som återstår före deklarationen).
+Inget som blockerar deklarationen återstår — bokföring, moms, NE-bilaga med
+alla justeringar och SRU-export är på plats. Kvar: K1 (sällan aktuell för
+enkla fall), ev. SIE4-export och README-uppdatering.
 
 ## Konsekvens för två verksamheter
 
