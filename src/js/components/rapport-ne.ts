@@ -7,7 +7,7 @@ import {
   type NeJusteringsrad,
   type NeRad,
 } from "../ne-bilaga";
-import { selectedYear } from "../signals";
+import { deklarationVal, selectedYear } from "../signals";
 
 import styles from "./rapport.css?inline";
 
@@ -139,7 +139,10 @@ class RapportNe extends Component {
         return;
       }
 
-      const rapport = generateNeBilaga(selectedYear.value);
+      const rapport = generateNeBilaga(
+        selectedYear.value,
+        deklarationVal.value[selectedYear.value],
+      );
 
       $section.innerHTML = html`
         ${tabell(`Intäkter ${rapport.year}`, rapport.intakter)}

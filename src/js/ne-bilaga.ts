@@ -1,3 +1,10 @@
+import { beraknaEgenavgifter, type EgenavgiftsKategori } from "./egenavgifter";
+import {
+  type PeriodiseringsFond,
+  proposeraPfondAterforing,
+  proposeraPfondAvsattning,
+} from "./periodiseringsfond";
+import { beraknaRantefordelning, slrForAr } from "./rantefordelning";
 import { aliases, transactions } from "./signals";
 
 /**
@@ -96,6 +103,37 @@ export type NeBilaga = {
    *  negativt = R48 underskott. */
   skattemassigtResultat: number;
   varningar: Array<string>;
+};
+
+/**
+ * Använda deklarationsuppgifter för rutor som inte går att läsa ur
+ * bokföringen — räntefördelning, egenavgifter och periodiseringsfond.
+ * Saknas uppgifter förblir rutorna manuella, precis som förr.
+ *
+ * Obs: egenavgifter ska egentligen beräknas på det gemensamma resultatet
+ * över alla verksamheter (IL 14 kap 12 §); tills den sammanslagna vyn finns
+ * (PLAN.md punkt 4) används denna journals resultat.
+ */
+export type NeDeklarationsVal = {
+  rantefordelning?: {
+    /** Kapitalunderlaget vid föregående års utgång (justerat eget kapital). */
+    kapitalunderlag: number;
+    /** Överskrivning av tabellvärdet för statslåneräntan. */
+    slrOverskrivning?: number;
+  };
+  egenavgifter?: {
+    kategori: EgenavgiftsKategori;
+    /** Föregående års medgivna avdrag (schablon) → R40. */
+    foregaendeArsSchablonavdrag?: number;
+    /** Föregående års påförda egenavgifter → R41. */
+    foregaendeArsPafort?: number;
+  };
+  periodiseringsfond?: {
+    /** Tidigare års fonder — behövs för återföring i R32. */
+    fonder: Array<PeriodiseringsFond>;
+    /** Årets avsättning; default är maximalt (30 % av R33) → R34. */
+    onskadAvsattning?: number;
+  };
 };
 
 type NeMappning = {
@@ -388,14 +426,20 @@ const SUMRUTOR: Array<{
 
 /**
  * Bygger avsnittet "Skattemässiga justeringar" (R12–R48) ur bokfört
- * resultat och saldon. Bara R13 och R14 räknas fram ur kontosaldon —
- * resten är manuella tills dess att egenavgifter, räntefördelning och
- * fonder implementerats (se PLAN.md).
+ * resultat och saldon. R13 och R14 räknas fram ur kontosaldon; räntefördelning
+ * (R30/R31), periodiseringsfond (R32/R34) och egenavgifter (R40–R43) styrs av
+ * användarens deklarationsuppgifter — resten är manuella.
  */
 function byggJusteringar(
   saldon: Map<number, number>,
   bokfortResultat: number,
-): { rader: Array<NeJusteringsrad>; skattemassigtResultat: number } {
+  val: NeDeklarationsVal,
+  year: string,
+): {
+  rader: Array<NeJusteringsrad>;
+  skattemassigtResultat: number;
+  varningar: Array<string>;
+} {
   const kontonamn = (konto: number) =>
     aliases.value.find((alias) => alias.id === konto)?.to ?? "";
 
@@ -442,9 +486,50 @@ function byggJusteringar(
     });
   }
 
+  /**
+   * Deklarationsbaserade rutor — ifyllnadsbelopp som styrs av användarens
+   * uppgifter i stället för bokföringen. R30/R31 (räntefördelning), R34 och
+   * R43 beräknas lazy i loopen eftersom deras underlag först står klart där
+   * kedjan nått fram.
+   */
+  const deklarationer = new Map<NeJusteringsRuta, number>();
+  const justeringsVarningar: Array<string> = [];
+
+  /** Räntefördelningsförslaget appliceras i loopen — positiv räntefördelning
+   *  får nämligen inte överstiga resultatet före räntefördelning (R29). */
+  let rfForslag: ReturnType<typeof beraknaRantefordelning> = null;
+
+  if (val.rantefordelning) {
+    rfForslag = beraknaRantefordelning({
+      kapitalunderlag: val.rantefordelning.kapitalunderlag,
+      slrSats: val.rantefordelning.slrOverskrivning ?? slrForAr(Number(year)),
+    });
+
+    if (rfForslag) {
+      justeringsVarningar.push(...rfForslag.varningar);
+    }
+  }
+
+  if (val.periodiseringsfond) {
+    for (const rad of proposeraPfondAterforing({
+      fonder: val.periodiseringsfond.fonder,
+      ar: Number(year),
+    })) {
+      deklarationer.set("R32", (deklarationer.get("R32") ?? 0) + rad.belopp);
+      justeringsVarningar.push(...rad.varningar);
+    }
+  }
+
+  if (val.egenavgifter) {
+    deklarationer.set("R40", val.egenavgifter.foregaendeArsSchablonavdrag ?? 0);
+    deklarationer.set("R41", val.egenavgifter.foregaendeArsPafort ?? 0);
+  }
+
   const rader: Array<NeJusteringsrad> = [];
   let ackumulerat = bokfortResultat;
   let summaIndex = 0;
+  /** Underlaget till R43 — kedjans värde precis före R40 läggs på. */
+  let basForeR40 = bokfortResultat;
 
   const skjutUtSummorFramtill = (efter: string) => {
     while (
@@ -466,7 +551,101 @@ function byggJusteringar(
   skjutUtSummorFramtill("R12");
 
   for (const spec of JUSTERINGAR) {
-    const rad = beraknat.get(spec.ruta) ?? {
+    let rad = beraknat.get(spec.ruta);
+
+    if (!rad && deklarationer.has(spec.ruta)) {
+      rad = {
+        ruta: spec.ruta,
+        beskrivning: "",
+        belopp: deklarationer.get(spec.ruta)!,
+        summa: false,
+        manuell: false,
+        konton: [],
+      };
+    }
+
+    // Positiv räntefördelning får inte skapa underskott — avdraget är
+    // högst resultatet före räntefördelningen (R29). Överskjutande belopp
+    // blir sparat fördelningsbelopp och kan användas senare år.
+    if (!rad && spec.ruta === "R30" && rfForslag?.riktning === "positiv") {
+      const tak = Math.max(0, ackumulerat);
+      const belopp = Math.min(rfForslag.belopp, tak);
+
+      rad = {
+        ruta: spec.ruta,
+        beskrivning: "",
+        belopp,
+        summa: false,
+        manuell: false,
+        konton: [],
+      };
+
+      if (belopp < rfForslag.belopp) {
+        justeringsVarningar.push(
+          `Positiv räntefördelning begränsades till resultatet före räntefördelning (R29). ${rfForslag.belopp - belopp} kr sparas som sparat fördelningsbelopp till kommande år.`,
+        );
+      }
+    }
+
+    if (!rad && spec.ruta === "R31" && rfForslag?.riktning === "negativ") {
+      rad = {
+        ruta: spec.ruta,
+        beskrivning: "",
+        belopp: rfForslag.belopp,
+        summa: false,
+        manuell: false,
+        konton: [],
+      };
+    }
+
+    // R34:s tak är 30 % av R33 — och ackumulerat är exakt R33 här, eftersom
+    // summorutan ligger mellan R32 och R34 i blankettordningen.
+    if (!rad && spec.ruta === "R34" && val.periodiseringsfond) {
+      const forslag = proposeraPfondAvsattning({
+        overskott: ackumulerat,
+        onskatBelopp: val.periodiseringsfond.onskadAvsattning,
+      });
+
+      if (forslag) {
+        rad = {
+          ruta: spec.ruta,
+          beskrivning: "",
+          belopp: forslag.belopp,
+          summa: false,
+          manuell: false,
+          konton: [],
+        };
+        justeringsVarningar.push(...forslag.varningar);
+      }
+    }
+
+    // R43 räknas på underlaget före föregående års poster — med R40/R41
+    // tillämpade blir det samma nettoöverskott som summorutan R42.
+    if (!rad && spec.ruta === "R43" && val.egenavgifter) {
+      const forslag = beraknaEgenavgifter({
+        overskottForeEgenavgifter: basForeR40,
+        kategori: val.egenavgifter.kategori,
+        foregaendeArsSchablonavdrag:
+          val.egenavgifter.foregaendeArsSchablonavdrag ?? 0,
+        foregaendeArsPafort: val.egenavgifter.foregaendeArsPafort ?? 0,
+      });
+
+      rad = {
+        ruta: spec.ruta,
+        beskrivning: "",
+        belopp: forslag.schablonavdrag,
+        summa: false,
+        manuell: false,
+        konton: [],
+      };
+      justeringsVarningar.push(...forslag.varningar);
+    }
+
+    if (spec.ruta === "R40") {
+      basForeR40 = ackumulerat;
+    }
+
+    rad ??= {
       ruta: spec.ruta,
       beskrivning: "",
       belopp: 0,
@@ -492,7 +671,11 @@ function byggJusteringar(
     konton: [],
   });
 
-  return { rader, skattemassigtResultat: ackumulerat };
+  return {
+    rader,
+    skattemassigtResultat: ackumulerat,
+    varningar: justeringsVarningar,
+  };
 }
 
 /** Årets resultat — används i omföringen vid bokslut. En transaktion som rör
@@ -500,7 +683,10 @@ function byggJusteringar(
  *  (den skulle nolla resultatkontona). */
 const RESULTATDISPOSITION_KONTO = 8999;
 
-export function generateNeBilaga(year: string): NeBilaga {
+export function generateNeBilaga(
+  year: string,
+  val: NeDeklarationsVal = {},
+): NeBilaga {
   const saldon = new Map<number, number>();
 
   for (const tx of transactions.value) {
@@ -607,10 +793,11 @@ export function generateNeBilaga(year: string): NeBilaga {
   }
 
   const bokfortResultat = summaIntakter - summaKostnader;
-  const { rader: justeringar, skattemassigtResultat } = byggJusteringar(
-    saldon,
-    bokfortResultat,
-  );
+  const {
+    rader: justeringar,
+    skattemassigtResultat,
+    varningar: justeringsVarningar,
+  } = byggJusteringar(saldon, bokfortResultat, val, year);
 
   return {
     year,
@@ -619,6 +806,6 @@ export function generateNeBilaga(year: string): NeBilaga {
     bokfortResultat,
     justeringar,
     skattemassigtResultat,
-    varningar,
+    varningar: [...varningar, ...justeringsVarningar],
   };
 }

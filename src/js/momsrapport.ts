@@ -79,10 +79,24 @@ export function momsrader(
 }
 
 export function generateMomsrapport(year: string): Momsrapport {
+  return generateMomsrapportFor(year, transactions.value);
+}
+
+/**
+ * Rapporten för ett godtyckligt transaktionsunderlag. Används av den
+ * sammanslagna vyn som skickar in transaktionerna från alla journaler:
+ * summeringen sker i ören över hela underlaget och varje ruta avrundas en
+ * enda gång. Att i stället addera två färdigavrundade rapporter kan kosta
+ * upp till en krona per ruta — momsdeklarationen är gemensam per person.
+ */
+export function generateMomsrapportFor(
+  year: string,
+  txs: Array<Transaction>,
+): Momsrapport {
   // Filter transactions for the specified period. Momsomföringar exkluderas
   // så att rapporten fortsätter visa periodens verkliga moms även efter att
   // deklarationen bokförts (annars skulle allt summera till noll).
-  const periodTransactions = transactions.value.filter((tx) => {
+  const periodTransactions = txs.filter((tx) => {
     const txDate = new Date(tx.date);
     return txDate.getFullYear() === parseInt(year) && !arMomsomforing(tx);
   });

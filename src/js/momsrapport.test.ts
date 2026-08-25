@@ -1,14 +1,21 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   generateMomsrapport,
+  generateMomsrapportFor,
   harMomsomforing,
-  rutbelopp,
   momsSkuld,
+  rutbelopp,
   skapaMomsbetalning,
   skapaMomsomforing,
 } from "./momsrapport";
-import { laddaJournal, rensaJournal, radrader, summaOre } from "./test-helpers";
-import { transactions } from "./signals";
+import { extraJournal, transactions } from "./signals";
+import {
+  laddaExtraJournalFranText,
+  laddaJournal,
+  radrader,
+  rensaJournal,
+  summaOre,
+} from "./test-helpers";
 
 const HEADER = `; Testkontoplan
 account tillgångar:bankkonto
@@ -445,5 +452,106 @@ describe("momsskuld och betalning", () => {
 
     expect(momsSkuld()).toBeNull();
     expect(skapaMomsbetalning("2026-02-12", 1930)).toBeNull();
+  });
+});
+
+describe("sammanslagen momsdeklaration", () => {
+  // Försäljning på 1 001,50 kr netto ger 25 % moms = 250,375 kr, som bokförs
+  // som 250,38 (öresavrundad posting). En sådan ruta per journal.
+  const forsaljningMedOren = `2025-03-01 Försäljning
+    1930  1251.88 SEK
+    3000  -1001.50 SEK
+    2611  -250.38 SEK`;
+
+  /** Underlaget som merge-vyn skickar in: aktiv journal + extrajournalen. */
+  function sammanslagetUnderlag() {
+    const extra = extraJournal.value;
+
+    if (!extra) {
+      throw new Error("Extrajournalen är inte inläst");
+    }
+
+    return [...transactions.value, ...extra.transactions];
+  }
+
+  it("summerar i ören över båda journalerna och avrundar en gång", async () => {
+    await laddaJournal(journal(forsaljningMedOren));
+    await laddaExtraJournalFranText(`${HEADER}\n${forsaljningMedOren}\n`);
+
+    const enskild = generateMomsrapport("2025");
+
+    // Per journal avrundat: 250 + 250 = 500 — det är fel sätt att summera.
+    expect(rutbelopp(enskild, "10")).toBe(250);
+
+    const sammanslagen = generateMomsrapportFor("2025", sammanslagetUnderlag());
+
+    // Korrekt: 25 038 + 25 038 öre = 500,76 kr → avrundat 501. Att addera de
+    // färdigavrundade rutorna hade kostat en krona i deklarationen.
+    expect(rutbelopp(sammanslagen, "10")).toBe(501);
+    expect(sammanslagen.nettoMoms).toBe(501);
+  });
+
+  it("exkluderar momsomföringar även från extrajournalen", async () => {
+    await laddaJournal(journal(forsaljningMedOren));
+
+    // Andra verksamheten har både försäljning och en bokförd omföring som
+    // nollar momskontona mot 2650 — den ska inte räknas med i underlaget.
+    await laddaExtraJournalFranText(
+      `${HEADER}
+account skulder:redovisningskonto_moms
+alias 2650 = skulder:redovisningskonto_moms
+
+2025-03-01 Försäljning andra verksamheten
+    1930  1251.88 SEK
+    3000  -1001.50 SEK
+    2611  -250.38 SEK
+
+2025-12-31 Momsredovisning andra verksamheten
+    2611  250.38 SEK
+    2650  -250.38 SEK
+`,
+    );
+
+    const sammanslagen = generateMomsrapportFor("2025", sammanslagetUnderlag());
+
+    // Utan exkludering hade extrajournalens omföring nollat dess bidrag:
+    // 250 + (250 − 250) = 250 i stället för korrekta 501.
+    expect(rutbelopp(sammanslagen, "10")).toBe(501);
+    expect(sammanslagen.nettoMoms).toBe(501);
+  });
+
+  it("väger ihop ingående momsen över journalerna i ruta 48", async () => {
+    await laddaJournal(journal(forsaljningMedOren));
+    await laddaExtraJournalFranText(
+      `${HEADER}
+
+2025-04-01 Inköp med ingående moms
+    4022  400.00 SEK
+    2640  100.00 SEK
+    1930  -500.00 SEK
+
+2025-05-01 Försäljning
+    1930  1251.88 SEK
+    3000  -1001.50 SEK
+    2611  -250.38 SEK
+`,
+    );
+
+    const sammanslagen = generateMomsrapportFor("2025", sammanslagetUnderlag());
+
+    // Utgående: 501. Ingående: bara extrajournalen har inköp → 100.
+    expect(rutbelopp(sammanslagen, "10")).toBe(501);
+    expect(rutbelopp(sammanslagen, "48")).toBe(100);
+    expect(sammanslagen.nettoMoms).toBe(401);
+  });
+
+  it("påverkar inte den aktiva journalens egen rapport", async () => {
+    await laddaJournal(journal(forsaljningMedOren));
+    await laddaExtraJournalFranText(`${HEADER}\n${forsaljningMedOren}\n`);
+
+    generateMomsrapportFor("2025", sammanslagetUnderlag());
+
+    // Sammanslagningsvyn får inte läcka in i den vanliga rapporten
+    expect(rutbelopp(generateMomsrapport("2025"), "10")).toBe(250);
   });
 });

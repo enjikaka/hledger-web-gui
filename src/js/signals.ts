@@ -1,5 +1,6 @@
 import { computed, effect, signal } from "@preact/signals-core";
 import signalsDevtool from "signals-devtool-provider";
+import type { NeDeklarationsVal } from "./ne-bilaga";
 import type { Account, Alias, Transaction } from "./parse-journal-file";
 
 export const transactions = signal<Array<Transaction>>([]);
@@ -19,6 +20,23 @@ export const fileName = signal<string>("");
 
 /** Globalt valt år — styr transaktionslistan, momsrapporten m.fl. vyer. */
 export const selectedYear = signal<string>(String(new Date().getFullYear()));
+
+/** Inladdad andra journal för de gemensamma vyerna (momsdeklarationen är
+ *  gemensam per person). Read-only — redigering sker när journalen är aktiv.
+ *  Lever bara i minnet. */
+export const extraJournal = signal<{
+  namn: string;
+  transactions: Array<Transaction>;
+} | null>(null);
+
+/** Styr om momsrapportsidan visar bara den aktiva journalen eller den
+ *  sammanslagna vyn över aktiva + extra journal. */
+export const momsVy = signal<"journal" | "sammanslagen">("journal");
+
+/** Deklarationsuppgifter per år (räntefördelning, egenavgifter,
+ *  periodiseringsfond) som inte går att läsa ur bokföringen. Lever bara i
+ *  minnet — de nollas när sidan laddas om. */
+export const deklarationVal = signal<Record<string, NeDeklarationsVal>>({});
 
 /** Alla år som förekommer i journalen, plus innevarande år. Senaste först. */
 export const availableYears = computed(() => {
@@ -72,6 +90,9 @@ const signals = {
   availableYears,
   journalHeader,
   fileName,
+  deklarationVal,
+  extraJournal,
+  momsVy,
 };
 
 // Devtool-providern kopplar upp sig mot Chrome-tilläggets port via den globala

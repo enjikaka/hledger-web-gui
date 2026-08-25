@@ -550,3 +550,200 @@ describe("skattemässiga justeringar R12–R48", () => {
     expect(jrad(generateNeBilaga("2026"), "R13").belopp).toBe(700);
   });
 });
+
+describe("räntefördelning, egenavgifter och periodiseringsfond", () => {
+  const forsalkJournal = async () =>
+    laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  10000.00 SEK
+    3000  -10000.00 SEK`,
+      ),
+    );
+
+  it("drar positiv räntefördelning i R30 och följer kedjan till R47", async () => {
+    await forsalkJournal();
+
+    // SLR 2,55 % + 6 pe = 8,55 %. 100 000 × 0,0855 = 8 550
+    const bilaga = generateNeBilaga("2025", {
+      rantefordelning: { kapitalunderlag: 100_000, slrOverskrivning: 0.0255 },
+    });
+
+    const r30 = jrad(bilaga, "R30");
+    expect(r30.manuell).toBe(false);
+    expect(r30.belopp).toBe(8550);
+    expect(jrad(bilaga, "R31").manuell).toBe(true);
+
+    // R33 = R29 − R30 = 10 000 − 8 550
+    expect(jrad(bilaga, "R33").belopp).toBe(1450);
+    expect(jrad(bilaga, "R47").belopp).toBe(1450);
+    expect(bilaga.skattemassigtResultat).toBe(1450);
+  });
+
+  it("begränsar positiv räntefördelning till R29 — överskjutande belopp sparas", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  5000.00 SEK
+    3000  -5000.00 SEK`,
+      ),
+    );
+
+    // Förslaget är 8 550 kr men resultatet före räntefördelning (R29) är
+    // bara 5 000 kr — avdraget får inte skapa underskott.
+    const bilaga = generateNeBilaga("2025", {
+      rantefordelning: { kapitalunderlag: 100_000, slrOverskrivning: 0.0255 },
+    });
+
+    expect(jrad(bilaga, "R30").belopp).toBe(5000);
+    expect(jrad(bilaga, "R33").belopp).toBe(0);
+    expect(jrad(bilaga, "R47").belopp).toBe(0);
+    expect(
+      bilaga.varningar.some((v) => v.includes("sparat fördelningsbelopp")),
+    ).toBe(true);
+  });
+
+  it("lägger negativ räntefördelning till i R31 när kapitalunderlaget under −500 000 kr", async () => {
+    await forsalkJournal();
+
+    const bilaga = generateNeBilaga("2025", {
+      rantefordelning: { kapitalunderlag: -600_000, slrOverskrivning: 0.0255 },
+    });
+
+    const r31 = jrad(bilaga, "R31");
+    expect(r31.manuell).toBe(false);
+    expect(r31.belopp).toBe(21300);
+
+    // Tillägget höjer det skattemässiga resultatet: 10 000 + 21 300
+    expect(jrad(bilaga, "R33").belopp).toBe(31300);
+    expect(bilaga.varningar.some((v) => v.includes("-500 000"))).toBe(true);
+  });
+
+  it("räknar fram schablonavdraget i R43 och följer kedjan via R42", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  200000.00 SEK
+    3000  -200000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025", {
+      egenavgifter: { kategori: "full" },
+    });
+
+    expect(jrad(bilaga, "R40").manuell).toBe(false);
+    expect(jrad(bilaga, "R41").manuell).toBe(false);
+    expect(jrad(bilaga, "R42").belopp).toBe(200000);
+
+    const r43 = jrad(bilaga, "R43");
+    expect(r43.manuell).toBe(false);
+    expect(r43.belopp).toBe(50_000); // 25 % av 200 000
+
+    expect(jrad(bilaga, "R47").belopp).toBe(150_000);
+    expect(bilaga.varningar.some((v) => /nedsättning/i.test(v))).toBe(true);
+  });
+
+  it("väger in föregående års poster (R40/R41) i schablonavdraget", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  200000.00 SEK
+    3000  -200000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025", {
+      egenavgifter: {
+        kategori: "full",
+        foregaendeArsSchablonavdrag: 30_000,
+        foregaendeArsPafort: 25_000,
+      },
+    });
+
+    expect(jrad(bilaga, "R40").belopp).toBe(30_000);
+    expect(jrad(bilaga, "R41").belopp).toBe(25_000);
+    expect(jrad(bilaga, "R42").belopp).toBe(205_000);
+    expect(jrad(bilaga, "R43").belopp).toBe(51_250); // 25 % av 205 000
+    expect(jrad(bilaga, "R47").belopp).toBe(153_750);
+  });
+
+  it("sätter maximal periodiseringsfondavsättning i R34 som default", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  100000.00 SEK
+    3000  -100000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025", {
+      periodiseringsfond: { fonder: [] },
+    });
+
+    const r34 = jrad(bilaga, "R34");
+    expect(r34.manuell).toBe(false);
+    expect(r34.belopp).toBe(30_000); // 30 % av R33 = 100 000
+
+    expect(jrad(bilaga, "R33").belopp).toBe(100_000);
+    expect(jrad(bilaga, "R35").belopp).toBe(70_000);
+    expect(jrad(bilaga, "R47").belopp).toBe(70_000);
+  });
+
+  it("hedrar en lägre önskad avsättning till periodiseringsfonden", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  100000.00 SEK
+    3000  -100000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025", {
+      periodiseringsfond: { fonder: [], onskadAvsattning: 10_000 },
+    });
+
+    expect(jrad(bilaga, "R34").belopp).toBe(10_000);
+    expect(jrad(bilaga, "R35").belopp).toBe(90_000);
+  });
+
+  it("återför gamla periodiseringsfonder i R32 — och taket på R34 växer med", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  100000.00 SEK
+    3000  -100000.00 SEK`,
+      ),
+    );
+
+    // Kohort 2019 har passerat sexårsgränsen vid deklarationen för 2025
+    const bilaga = generateNeBilaga("2025", {
+      periodiseringsfond: { fonder: [{ ar: 2019, saldo: 5000 }] },
+    });
+
+    const r32 = jrad(bilaga, "R32");
+    expect(r32.manuell).toBe(false);
+    expect(r32.belopp).toBe(5000);
+
+    // R33 = 100 000 + 5 000, taket = 30 % av R33 = 31 500
+    expect(jrad(bilaga, "R33").belopp).toBe(105_000);
+    expect(jrad(bilaga, "R34").belopp).toBe(31_500);
+    expect(jrad(bilaga, "R35").belopp).toBe(73_500);
+    expect(jrad(bilaga, "R47").belopp).toBe(73_500);
+    expect(bilaga.varningar.some((v) => v.includes("måste återföras"))).toBe(
+      true,
+    );
+  });
+
+  it("lämnar räntefördelnings- och fondrutorna manuella utan deklarationsuppgifter", async () => {
+    await forsalkJournal();
+
+    const bilaga = generateNeBilaga("2025");
+
+    for (const ruta of ["R30", "R31", "R32"]) {
+      const rad = jrad(bilaga, ruta);
+      expect(rad.manuell).toBe(true);
+      expect(rad.belopp).toBe(0);
+    }
+  });
+});

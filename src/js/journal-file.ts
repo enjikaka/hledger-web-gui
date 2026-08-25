@@ -39,6 +39,33 @@ export async function parseFileIntoSignals(file: File): Promise<void> {
   Signals.fileName.value = file.name;
 }
 
+/**
+ * Läser in en journal som extraunderlag för de gemensamma vyerna (t.ex. den
+ * sammanslagna momsdeklarationen). Bara transaktionerna behövs — rapporterna
+ * slår upp kontonummer, inte kontonamn, och journalen blir aldrig redigerbar.
+ */
+export async function laddaExtraJournal(file: File): Promise<void> {
+  const transactions: typeof Signals.transactions.value = [];
+
+  for await (const item of parseJournalFile(file)) {
+    if (item.type === "transaction") {
+      transactions.push(item.data);
+    }
+  }
+
+  Signals.extraJournal.value = { namn: file.name, transactions };
+}
+
+/** Öppnar extrajournalen via filväljaren (File System Access API). Handtaget
+ *  sparas inte — journalen ska bara läsas, aldrig skrivas. */
+export async function oppnaExtraJournal(): Promise<void> {
+  const [handle] = await window.showOpenFilePicker({
+    types: JOURNAL_FILE_TYPES,
+  });
+
+  await laddaExtraJournal(await handle.getFile());
+}
+
 export function supportsFileSystemAccess(): boolean {
   return "showOpenFilePicker" in window;
 }
