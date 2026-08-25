@@ -740,10 +740,87 @@ describe("räntefördelning, egenavgifter och periodiseringsfond", () => {
 
     const bilaga = generateNeBilaga("2025");
 
-    for (const ruta of ["R30", "R31", "R32"]) {
+    for (const ruta of ["R30", "R31", "R32", "R36", "R37"]) {
       const rad = jrad(bilaga, ruta);
       expect(rad.manuell).toBe(true);
       expect(rad.belopp).toBe(0);
     }
+  });
+
+  it("sätter av till expansionsfond i R36 och följer kedjan via R35", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  100000.00 SEK
+    3000  -100000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025", {
+      expansionsfond: {
+        kapitalunderlag: 100_000,
+        befintligtSaldo: 0,
+        onskadAndring: 40_000,
+      },
+    });
+
+    const r36 = jrad(bilaga, "R36");
+    expect(r36.manuell).toBe(false);
+    expect(r36.belopp).toBe(40_000);
+
+    expect(jrad(bilaga, "R35").belopp).toBe(100_000);
+    expect(jrad(bilaga, "R42").belopp).toBe(60_000);
+    expect(jrad(bilaga, "R47").belopp).toBe(60_000);
+  });
+
+  it("takar avsättningen till expansionsfond mot R35 — resultatet får inte bli negativt", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  100000.00 SEK
+    3000  -100000.00 SEK`,
+      ),
+    );
+
+    // Önskan 150 000 kr men inkomsten före avsättning (R35) är bara 100 000.
+    // Kapitalunderlaget räcker (taket 125 940), så det är R35 som begränsar.
+    const bilaga = generateNeBilaga("2025", {
+      expansionsfond: {
+        kapitalunderlag: 100_000,
+        befintligtSaldo: 0,
+        onskadAndring: 150_000,
+      },
+    });
+
+    expect(jrad(bilaga, "R36").belopp).toBe(100_000);
+    expect(jrad(bilaga, "R42").belopp).toBe(0);
+    expect(jrad(bilaga, "R47").belopp).toBe(0);
+    expect(bilaga.varningar.some((v) => v.includes("(R35)"))).toBe(true);
+  });
+
+  it("återförer expansionsfond i R37 och höjer resultatet", async () => {
+    await laddaJournal(
+      journal(
+        `2025-03-01 Försäljning
+    1930  50000.00 SEK
+    3000  -50000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025", {
+      expansionsfond: {
+        kapitalunderlag: 100_000,
+        befintligtSaldo: 30_000,
+        onskadAndring: -30_000,
+      },
+    });
+
+    const r37 = jrad(bilaga, "R37");
+    expect(r37.manuell).toBe(false);
+    expect(r37.belopp).toBe(30_000);
+    expect(jrad(bilaga, "R36").manuell).toBe(true);
+
+    // Intäkten vid återföringen ökar resultatet: 50 000 + 30 000
+    expect(jrad(bilaga, "R47").belopp).toBe(80_000);
   });
 });

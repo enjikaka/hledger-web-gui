@@ -1,4 +1,5 @@
 import { beraknaEgenavgifter, type EgenavgiftsKategori } from "./egenavgifter";
+import { beraknaExpansionsfondAndring } from "./expansionsfond";
 import {
   type PeriodiseringsFond,
   proposeraPfondAterforing,
@@ -133,6 +134,15 @@ export type NeDeklarationsVal = {
     fonder: Array<PeriodiseringsFond>;
     /** Årets avsättning; default är maximalt (30 % av R33) → R34. */
     onskadAvsattning?: number;
+  };
+  expansionsfond?: {
+    /** Kapitalunderlaget vid årets utgång (SKV 2196). */
+    kapitalunderlag?: number;
+    /** Kvarstående avsättningar från tidigare år, positivt. */
+    befintligtSaldo?: number;
+    /** Önskad ändring: positivt = avsättning (R36),
+     *  negativt = återföring (R37). */
+    onskadAndring?: number;
   };
 };
 
@@ -510,6 +520,22 @@ function byggJusteringar(
     }
   }
 
+  /** Expansionsfondens 125,94 %-tak läses här; taket mot inkomsten (R35)
+   *  appliceras i loopen, där ackumulerat är exakt R35 vid R36. */
+  let efForslag: ReturnType<typeof beraknaExpansionsfondAndring> = null;
+
+  if (val.expansionsfond) {
+    efForslag = beraknaExpansionsfondAndring({
+      kapitalunderlag: val.expansionsfond.kapitalunderlag,
+      befintligtSaldo: val.expansionsfond.befintligtSaldo,
+      onskadAndring: val.expansionsfond.onskadAndring,
+    });
+
+    if (efForslag) {
+      justeringsVarningar.push(...efForslag.varningar);
+    }
+  }
+
   if (val.periodiseringsfond) {
     for (const rad of proposeraPfondAterforing({
       fonder: val.periodiseringsfond.fonder,
@@ -617,6 +643,38 @@ function byggJusteringar(
         };
         justeringsVarningar.push(...forslag.varningar);
       }
+    }
+
+    // Avsättning till expansionsfond får vara högst inkomsten före avsättning
+    // (R35) — ackumulerat är exakt R35 här, precis som vid R34-taket.
+    if (!rad && spec.ruta === "R36" && efForslag?.riktning === "avsattning") {
+      const tak = Math.max(0, ackumulerat);
+
+      rad = {
+        ruta: spec.ruta,
+        beskrivning: "",
+        belopp: Math.min(efForslag.belopp, tak),
+        summa: false,
+        manuell: false,
+        konton: [],
+      };
+
+      if (tak < efForslag.belopp) {
+        justeringsVarningar.push(
+          `Avsättning till expansionsfond begränsades till resultatet före avsättning (R35). ${efForslag.belopp - tak} kr kan inte sättas av i år.`,
+        );
+      }
+    }
+
+    if (!rad && spec.ruta === "R37" && efForslag?.riktning === "aterforing") {
+      rad = {
+        ruta: spec.ruta,
+        beskrivning: "",
+        belopp: efForslag.belopp,
+        summa: false,
+        manuell: false,
+        konton: [],
+      };
     }
 
     // R43 räknas på underlaget före föregående års poster — med R40/R41

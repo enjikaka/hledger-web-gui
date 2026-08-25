@@ -1,6 +1,7 @@
 import { effect } from "@preact/signals-core";
 import { Component, registerComponent } from "webact";
 import { beraknaEgenavgifter } from "../egenavgifter";
+import { beraknaExpansionsfondAndring } from "../expansionsfond";
 import { generateNeBilaga, type NeDeklarationsVal } from "../ne-bilaga";
 import { proposeraPfondAterforing } from "../periodiseringsfond";
 import { beraknaRantefordelning, slrForAr } from "../rantefordelning";
@@ -231,6 +232,51 @@ class NeDeklaration extends Component {
         )
         .join("");
 
+      // --- Expansionsfond ---
+      let efDel = html`<p class="hint">
+        Fyll i kapitalunderlag, saldo och önskad ändring för att räkna fram
+        årets post.
+      </p>`;
+
+      if (val.expansionsfond) {
+        const forslag = beraknaExpansionsfondAndring({
+          kapitalunderlag: val.expansionsfond.kapitalunderlag,
+          befintligtSaldo: val.expansionsfond.befintligtSaldo,
+          onskadAndring: val.expansionsfond.onskadAndring,
+        });
+
+        if (!forslag) {
+          efDel = html`<p class="hint">Ingen ändring av expansfonden.</p>`;
+        } else {
+          // Beloppet läses från bilagan så att R35-taket syns även här.
+          const rad = bilaga.justeringar.find((r) => r.ruta === forslag.ruta);
+          const belopp = rad && !rad.manuell ? rad.belopp : forslag.belopp;
+          const skattText =
+            forslag.riktning === "avsattning"
+              ? `Expansionsfondsskatt 20,6 % (${kr(forslag.skattPaAndring)}) betalas i år.`
+              : `Expansionsfondsskatt 20,6 % (${kr(forslag.skattPaAndring)}) tillgodoräknas.`;
+
+          efDel = html`
+            ${rutaRad(
+              forslag.ruta,
+              `${forslag.riktning === "avsattning" ? "Ökning" : "Minskning"} av expansfond: ${kr(belopp)}`,
+            )}
+            <p class="hint">
+              Utrymme enligt 125,94 %-taket:
+              ${kr(Math.max(0, forslag.maxTotalSaldo - forslag.befintligtSaldo))}.
+              ${skattText}
+            </p>
+            ${forslag.varningar
+              .map((varning) => html`<p class="varning">Obs! ${varning}</p>`)
+              .join("")}
+            ${bilaga.varningar
+              .filter((v) => v.includes("(R35)"))
+              .map((varning) => html`<p class="varning">Obs! ${varning}</p>`)
+              .join("")}
+          `;
+        }
+      }
+
       $section.innerHTML = html`
         <h2>Räntefördelning</h2>
         <div class="betalning">
@@ -328,6 +374,34 @@ class NeDeklaration extends Component {
           </label>
         </div>
         ${pfondDel}
+        <h2>Expansionsfond</h2>
+        <div class="betalning">
+          <label>
+            Kapitalunderlag vid årets utgång, kr
+            <input
+              type="number"
+              data-falt="ef.kapitalunderlag"
+              value="${val.expansionsfond?.kapitalunderlag ?? ""}"
+            />
+          </label>
+          <label>
+            Befintligt saldo av expansfond, kr
+            <input
+              type="number"
+              data-falt="ef.saldo"
+              value="${val.expansionsfond?.befintligtSaldo ?? ""}"
+            />
+          </label>
+          <label>
+            Önskad ändring, kr — positivt = avsättning, negativt = återföring
+            <input
+              type="number"
+              data-falt="ef.andring"
+              value="${val.expansionsfond?.onskadAndring ?? ""}"
+            />
+          </label>
+        </div>
+        ${efDel}
       `;
     });
 
@@ -407,6 +481,28 @@ class NeDeklaration extends Component {
               nytt.periodiseringsfond = {
                 fonder: befintlig?.fonder ?? [],
                 onskadAvsattning: tal,
+              };
+              break;
+            }
+            case "ef.kapitalunderlag":
+            case "ef.saldo":
+            case "ef.andring": {
+              const tal = talUrFalt($falt);
+              const befintlig = nytt.expansionsfond;
+
+              if (!befintlig && tal === undefined) {
+                break;
+              }
+
+              nytt.expansionsfond = {
+                kapitalunderlag:
+                  falt === "ef.kapitalunderlag"
+                    ? tal
+                    : befintlig?.kapitalunderlag,
+                befintligtSaldo:
+                  falt === "ef.saldo" ? tal : befintlig?.befintligtSaldo,
+                onskadAndring:
+                  falt === "ef.andring" ? tal : befintlig?.onskadAndring,
               };
               break;
             }

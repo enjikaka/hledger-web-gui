@@ -37,6 +37,14 @@ Sammanställt 2026-08-24 utifrån minnesanteckningar och genomgång av koden.
   enda avrundning per ruta (`generateMomsrapportFor`) — att addera
   färdigavrundade rapporter kostar upp till en krona per ruta. Omföring/
   betalning bokförs fortsatt per aktiv journal.
+- **Expansionsfond** (port från accounted, kontrollerad mot Skatteverket):
+  avsättning i R36 med dubbla tak — högst resultatet före avsättning (R35)
+  och totalt saldo högst 125,94 % av kapitalunderlaget vid årets utgång
+  (floor); återföring i R37 begränsas av saldot. Expansionsskatt 20,6 %
+  på ändringen visas som info (betalas i år / tillgodoräknas). Varning
+  (utan auto-återföring) när befintligt saldo överstiger taket — överskjutande
+  belopp måste återföras till beskattning. Eget fält för kapitalunderlaget,
+  som gäller vid årets utgång (räntefördelningens gäller föregående års).
 
 ## Kvar ❌
 
@@ -45,21 +53,15 @@ Sammanställt 2026-08-24 utifrån minnesanteckningar och genomgång av koden.
    ISO 8859-1, fältkoder R1–R11 = 7400–7403, 7500–7505, 7440; datum
    7011/7012). Behåll upphovsrättsnotisen (gnubok, AGPL-3.0). OBS: ska
    troligen även täcka R12–R48 nu när justeringarna finns.
-2. **Expansionsfond** — porta från accounted
-   `lib/bokslut/enskild-firma/expansionsfond-calculator.ts`. Ren
-   skattemekanism: 20,6 % expansionsfondsskatt på nettoändring, totalt
-   saldo tak 125,94 % av kapitalunderlaget (IL 34 kap), återföring ≤
-   saldo. Motsvarar NE R36/R37. Kapitalunderlaget kan matas in manuellt i
-   NE-sidans räntefördelningskort redan idag.
-3. **K1-blanketten**.
-4. **SIE4-export?** — `verifikat.ts` är designad för det ("en SIE-fil per år
+2. **K1-blanketten**.
+3. **SIE4-export?** — `verifikat.ts` är designad för det ("en SIE-fil per år
    går att skapa rakt av") men ingen export finns. Bekräfta om den ska med.
-5. **README** — beskriver fortfarande den gamla generiska journalhanteraren;
+4. **README** — beskriver fortfarande den gamla generiska journalhanteraren;
    uppdatera med moms/NE/bokslut.
 
 ## Prioritering inför deklarationen
 
-1 → 2 (SRU-export först, sedan expansionsfond).
+1 (SRU-exporten är den enda som återstår före deklarationen).
 
 ## Konsekvens för två verksamheter
 
