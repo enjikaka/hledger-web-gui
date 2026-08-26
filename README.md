@@ -59,6 +59,15 @@ Skatteverkets filöverföring.
 Deklarationsuppgifterna (kapitalunderlag, personnummer m.m.) lever bara i
 minnet och nollas när sidan laddas om.
 
+### SIE4-export
+
+Under **Inställningar** laddas bokföringen ner som SIE4-fil (`.se`) — svensk
+standard som de flesta bokföringsprogram kan importera. Filen innehåller
+saldon i ören (`#IB`/`#UB`/`#RES`) och alla numrerade verifikationer
+(`#VER`/`#TRANS`). Serien granskas före exporten: luckor, dubbletter och
+onumrerade verifikat rapporteras, och de senaste tas inte med. Filen kodas i
+CP437 enligt specen.
+
 ## Förutsättningar
 
 Journalen ska använda numeriska BAS-kontoalias, eftersom rapporterna slår upp
@@ -127,7 +136,6 @@ I Firefox/Safari fungerar appen med vanlig filväljare och nedladdning.
 - Räntefördelningsregler före beskattningsår 2025 (±50 000-gränserna) och
   sparat fördelningsbelopp som stat är ej modellerat
 - Avkastning enligt K10-reglerna (blankett K1) stöds inte ännu
-- SIE4-export saknas (verifikatmodellen är dock designad för den)
 
 ## Licens
 

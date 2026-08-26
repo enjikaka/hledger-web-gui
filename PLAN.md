@@ -60,23 +60,27 @@ Sammanställt 2026-08-24 utifrån minnesanteckningar och genomgång av koden.
   (bokföring, moms inkl. sammanslagen vy, bokslut, NE-bilaga med
   deklarationskorten, SRU-export), förutsättningar för journalformatet,
   begränsningar och projektstruktur.
+- **SIE4-export** (fullständig): en fil per räkenskapsår från sidan
+  Inställningar — `#FLAGGA/#PROGRAM/#FORMAT PCG4/#GEN/#FNAMN/#RAR/#MVAL`,
+  saldon i ören (`#IB` = alla transaktioner före årets start, `#UB` genom
+  årsslutet, `#RES` på resultatkonton) och alla numrerade verifikationer som
+  `#VER "serie" "nr" <datum> "<text>"` med `#TRANS`-rader. Seriegranskning
+  (luckor/dubbletter/onumrerade) körs före exporten; onumrerade verifikat
+  tas inte med. Filen kodas i CP437 enligt specen.
 
 ## Kvar ❌
 
 1. **K1-blanketten** — osäker relevans: gäller bara om någon av verksamheterna
    äger aktier i fåmansföretag (K10-regler). Väntar på besked; annars strykes.
-2. **SIE4-export?** — `verifikat.ts` är designad för det ("en SIE-fil per år
-   går att skapa rakt av") men ingen export finns. Beslutat: fullständig
-   export med alla verifikationer om den görs. Ej påbörjad.
-3. **SRU-export av B-sidorna?** — balanssidan (B1–B16, koderna 7200–7383) är
+2. **SRU-export av B-sidorna?** — balanssidan (B1–B16, koderna 7200–7383) är
    verifierad i kodlistan men exporteras inte än; NE-rapporten visar inte
-   heller balanssaldon. Värt att överväga tillsammans med SIE4.
+   heller balanssaldon. Balansberäkningen från SIE4-exporten kan återanvändas.
 
 ## Prioritering
 
 Inget som blockerar deklarationen återstår — bokföring, moms, NE-bilaga med
-alla justeringar och SRU-export är på plats. K1 väntar på besked; därefter ev.
-fullständig SIE4-export (där kan även B-sidorna i SRU:n ingå).
+alla justeringar, SRU-export och SIE4-export är på plats. K1 väntar på besked;
+därefter ev. B-sidorna i SRU:n (liten påbyggnad nu när saldobereäkningen finns).
 
 ## Konsekvens för två verksamheter
 
