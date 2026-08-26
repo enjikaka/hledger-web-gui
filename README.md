@@ -1,112 +1,135 @@
-# Hledger Journal Manager
+# hledger-web-gui
 
-A vanilla web application for managing hledger journal files. Upload your journal file and easily add new transactions using only the accounts defined in your file.
+Bokföring i webbläsaren för enskild firma. Appen arbetar direkt mot
+hledger-journalfiler: du öppnar din `.journal`-fil, bokför verifikat med
+verifikationsnumrering och luckkontroll, och får momsrapport, balansrapport,
+bokslut, NE-bilaga med skattemässiga justeringar samt SRU-export till
+Skatteverkets filöverföring.
 
-## Features
+## Funktioner
 
-- 📁 **File Upload**: Upload your `.journal` file via drag & drop or file picker
-- 📋 **Account Discovery**: Automatically extracts and displays all accounts defined in your journal file
-- ➕ **Transaction Form**: Easy-to-use form for adding new transactions
-- ⚖️ **Balance Validation**: Ensures your transactions balance (sum to zero)
-- 📄 **Live Preview**: See your journal file content in real-time
-- 🎨 **Modern UI**: Beautiful, responsive design that works on desktop and mobile
+### Bokföring
 
-## How to Use
+- **Öppna och spara journal** — via File System Access API (filen sparas direkt
+  tillbaka på disk) eller vanlig filväljare med nedladdning som fallback
+- **Verifikationsnumrering** — löpnummer per räkenskapsår i serien A, skrivet i
+  hledgers kodfält (`2025-03-01 (A12) …`). Serien granskas kontinuerligt:
+  luckor, dubbletter och onumrerade verifikat syns direkt
+- **Mallar** — snabbinmatning av återkommande verifikat med val av betalkonto
+- **Live-förhandsvisning** av den sparade journalen
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+### Moms
 
-2. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
+- **Momsrapport** enligt SKV 4700, summerad i ören och avrundad per ruta
+- **Sammanslagen momsvy** — momsdeklarationen är gemensam per person, så en
+  andra journal (andra verksamheten) kan laddas in som read-only underlag;
+  rutorna summeras då i ören över båda journalerna och avrundas en gång
+- **Momsomföring** — nollar momskontona mot 2650/1650 med öresutjämning på
+  3740, samma verifikat som Bokio bokför
+- **Momsbetalning** — reglerar 2650/1650 mot företags-, skatte- eller
+  eget kapitalkonto
 
-3. **Open your browser** and navigate to `http://localhost:5173`
+### Balansrapport och bokslut
 
-4. **Upload your journal file** by clicking "Choose Journal File" and selecting your `.journal` file
+- **Balansrapport** med ingående/utgående saldon per konto
+- **Årets resultat** — omföring från resultatkontona till 2019 (31 dec)
+- **Nollställning av eget kapital** — underkontona 2011–2019 nollas mot 2010
+  (1 jan året därpå), samma mönster som Bokio
 
-5. **View available accounts** - the app will automatically extract all accounts defined in your file
+### NE-bilaga (SKV 2161)
 
-6. **Add transactions**:
-   - Set the transaction date
-   - Enter a description
-   - Add postings by selecting accounts from the dropdown (only shows accounts from your file)
-   - Enter amounts and currency
-   - Add more postings if needed
-   - The app will validate that postings balance to zero
+- **Räkenskapsschemat R1–R11** mappat ur BAS-kontosaldo, med varningar för
+  konton utan NE-ruta
+- **Skattemässiga justeringar R12–R48** längs blankettens summokedjan:
+  - R13/R14 beräknas ur bokföringen (ej avdragsgilla kostnader, skattefria
+    intäkter)
+  - **Räntefördelning** R30/R31 — SLR + 6/1 procentenheter, obligatorisk
+    negativ räntefördelning vid kapitalunderlag under −500 000 kr, tak mot R29
+    enligt Skatteverket
+  - **Egenavgifter** R40–R43 — schablonavdrag 25/10/20 % med föregående års
+    poster
+  - **Periodiseringsfond** R32/R34 — avsättning högst 30 % av R33,
+    sexårskohorter med obligatorisk återföring
+  - **Expansionsfond** R36/R37 — tak mot R35 och mot 125,94 % av
+    kapitalunderlaget, expansionsskatt 20,6 % som info
+  - Övriga rutor markeras "fylls i manuellt"
+- **SRU-export** — INFO.SRU och BLANKETTER.SRU i ISO 8859-1/CRLF enligt
+  Skatteverkets tekniska beskrivning, redo för filöverföringstjänsten
 
-7. **Preview your journal** - see the updated content in real-time
+Deklarationsuppgifterna (kapitalunderlag, personnummer m.m.) lever bara i
+minnet och nollas när sidan laddas om.
 
-## File Format Support
+## Förutsättningar
 
-The app supports standard hledger journal files with:
-- Account definitions (`account accountname`)
-- Transactions with postings
-- Comments (lines starting with `;`)
-- Standard hledger syntax
+Journalen ska använda numeriska BAS-kontoalias, eftersom rapporterna slår upp
+kontonummer:
 
-## Example Transaction
-
-When you add a transaction like:
-- Date: 2025-01-15
-- Description: "Coffee purchase"
-- Postings:
-  - `expenses:food` + 25.00 SEK
-  - `assets:bank` - 25.00 SEK
-
-The app will format it as:
 ```
-2025-01-15 Coffee purchase
-    expenses:food   25.00 SEK
-    assets:bank  -25.00 SEK
+account tillgångar:bankkonto
+alias 1930 = tillgångar:bankkonto
 ```
 
-## Technical Details
+Räkenskapsåret är kalenderår. Driver du två verksamheter har de var sin
+journalfil — appen arbetar per journal, och den gemensamma momsdeklarationen
+hanteras via den sammanslagna vyn.
 
-- **TypeScript** - Type-safe development with modern JavaScript features
-- **Vite** - Fast development server and build tool
-- **Webact** - Lightweight web components library
-- **Preact Signals** - Reactive state management
-- **Responsive design** - works on desktop, tablet, and mobile
-- **File parsing** - client-side parsing of journal files
-- **Validation** - ensures transactions balance and all fields are filled
-- **Modern CSS** - uses CSS Grid, Flexbox, and modern styling
+## Kom igång
 
-## Development
+```bash
+npm install
+npm run dev        # utvecklingsserver på http://localhost:5173
+```
 
-This project uses Vite for the development server and build process.
+| Kommando           | Funktion                          |
+| ------------------ | --------------------------------- |
+| `npm run dev`      | Utvecklingsserver                 |
+| `npm run build`    | Bygg till `dist/`                 |
+| `npm run server`   | Servera det byggda                |
+| `npm test`         | Kör testerna (Vitest)             |
+| `npm run typecheck`| TypeScript-kontroll               |
 
-### Available Scripts
+Testerna ligger kolokaliserade med koden (`src/js/*.test.ts`) och laddar
+journals via samma parser som appen.
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build for production
-- `npm run server` - Serve the built application
-
-### Project Structure
+## Projektstruktur
 
 ```
 src/
 ├── js/
-│   ├── components/     # Webact components
-│   ├── signals.ts      # Preact signals for state
-│   ├── parse-journal-file.ts  # Journal file parser
-│   └── app.ts          # Main application logic
-├── css/
-│   └── style.css       # Application styles
-└── index.html          # Main HTML file
+│   ├── components/          # Webact-komponenter (rapporter, formulär, export)
+│   ├── pages/               # Sidor kopplade till routern
+│   ├── signals.ts           # Preact-signaler för applikationstillstånd
+│   ├── parse-journal-file.ts# Journalparser
+│   ├── verifikat.ts         # Verifikationsnumrering och seriegranskning
+│   ├── mallar.ts            # Verifikatsmallar
+│   ├── moms-rutor.ts        # Momskonto → ruta-mappningar (SKV 4700)
+│   ├── momsrapport.ts       # Momsrapport, omföring och betalning
+│   ├── balansrapport.ts     # Balansrapport
+│   ├── bokslut.ts           # Årets resultat och nollställning
+│   ├── ne-bilaga.ts         # NE-bilagan R1–R48 med justeringskedjan
+│   ├── rantefordelning.ts / egenavgifter.ts /
+│   │   periodiseringsfond.ts / expansionsfond.ts   # Deklarationskalkyler
+│   ├── ne-sru.ts            # SRU-generator (ISO 8859-1)
+│   └── app-router.ts / app.ts
+├── css/style.css
+└── index.html
 ```
 
-## Browser Compatibility
+## Webbläsarstöd
 
-Works in all modern browsers that support:
-- File API
-- ES6+ JavaScript
-- CSS Grid and Flexbox
-- Web Components
-- Constructable Stylesheets 
-## License
+Filöppning/-sparning på disk kräver File System Access API (Chrome/Edge).
+I Firefox/Safari fungerar appen med vanlig filväljare och nedladdning.
+
+## Kända begränsningar
+
+- Den sammanslagna momsvyn läser den andra journalen read-only; redigering
+  sker när journalen är aktiv
+- Räntefördelningsregler före beskattningsår 2025 (±50 000-gränserna) och
+  sparat fördelningsbelopp som stat är ej modellerat
+- Avkastning enligt K10-reglerna (blankett K1) stöds inte ännu
+- SIE4-export saknas (verifikatmodellen är dock designad för den)
+
+## Licens
 
 Licensed under the [GNU AGPL-3.0-or-later](LICENSE).
 
