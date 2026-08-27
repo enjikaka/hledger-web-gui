@@ -34,7 +34,7 @@ const posting = (account: number, ore: number): Posting => ({
 /** Årets resultat i ören. Positivt = vinst. Transaktioner som rör 8999
  *  (tidigare resultatomföring) räknas inte med. */
 export function beraknaArsresultatOre(year: string): number {
-  let ore = 0;
+  let summaOre = 0;
 
   for (const tx of transactions.value) {
     if (tx.date.slice(0, 4) !== year || rorArsresultat(tx)) {
@@ -43,14 +43,14 @@ export function beraknaArsresultatOre(year: string): number {
 
     for (const p of tx.postings) {
       if (p.account >= 3000 && p.account <= 8999) {
-        ore += ore(p.amount);
+        summaOre += ore(p.amount);
       }
     }
   }
 
   // Intäkter bokförs i kredit (negativt) — vinst blir positiv efter teckenbyte.
-  // `ore === 0` fångar -0, som annars läcker ut som "−0 kr" i formatteringen.
-  return ore === 0 ? 0 : -ore;
+  // `summaOre === 0` fångar -0, som annars läcker ut som "−0 kr" i formatteringen.
+  return summaOre === 0 ? 0 : -summaOre;
 }
 
 export function harArsresultat(year: string): boolean {
