@@ -67,6 +67,14 @@ Sammanställt 2026-08-24 utifrån minnesanteckningar och genomgång av koden.
   `#VER "serie" "nr" <datum> "<text>"` med `#TRANS`-rader. Seriegranskning
   (luckor/dubbletter/onumrerade) körs före exporten; onumrerade verifikat
   tas inte med. Filen kodas i CP437 enligt specen.
+- **SIE4-import** (för migrering från Bokio m.fl.): fil läses in på sidan
+  Inställningar, avkodas från CP437 (UTF-8-BOM sniffas) och förhandsvisas —
+  företag, år, antal verifikationer/konton. VER → transaktioner med koder,
+  #KONTO-namn → hledger-kontonamn (fallback `konto_<nr>`, gemener), IB-rader
+  → verifikat "(IBÅÅÅÅ)" daterat periodstart i egen serie så A-kedjans
+  luckkontroll inte stör; #UB/#RES hoppas över (redundant mot VER) och
+  okända poster räknas. Lägg in som Ersätt eller Lägg till (varning vid
+  överlappande år) — därefter sparas allt som vanlig .journal.
 
 ## Kvar ❌
 

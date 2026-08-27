@@ -218,8 +218,10 @@ export function genereraSie(year: string, val: SieVal = {}): SieFil {
   return genereraSieFor(year, transactions.value, val);
 }
 
-/** CP437-koder för tecken utanför ASCII som förekommer i svenska namn. */
-const CP437_MAPPA: Record<string, number> = {
+/** CP437-koder för tecken utanför ASCII som förekommer i svenska namn.
+ *  Exporteras för att avkodningen i sie-import ska spegla exakt samma
+ *  mappning. */
+export const CP437_MAPPA: Record<string, number> = {
   ä: 0x84,
   å: 0x86,
   ö: 0x94,

@@ -59,14 +59,25 @@ Skatteverkets filöverföring.
 Deklarationsuppgifterna (kapitalunderlag, personnummer m.m.) lever bara i
 minnet och nollas när sidan laddas om.
 
-### SIE4-export
+### SIE4-import och -export
 
-Under **Inställningar** laddas bokföringen ner som SIE4-fil (`.se`) — svensk
-standard som de flesta bokföringsprogram kan importera. Filen innehåller
-saldon i ören (`#IB`/`#UB`/`#RES`) och alla numrerade verifikationer
-(`#VER`/`#TRANS`). Serien granskas före exporten: luckor, dubbletter och
-onumrerade verifikat rapporteras, och de senaste tas inte med. Filen kodas i
-CP437 enligt specen.
+Under **Inställningar** finns både import och export i SIE4-format — svensk
+standard som de flesta bokföringsprogram (t.ex. Bokio, Visma, Fortnox) kan
+läsa och skriva.
+
+- **Import**: läs in en SIE4-fil så tolkas den och förhandsvisas (företag,
+  år, antal verifikationer och konton). Verifikationerna blir transaktioner
+  med sina koder, `#KONTO`-namnen blir hledger-konton, och ingående balanser
+  läggs in som egna verifikat `(IBÅÅÅÅ)` i en egen serie. Välj sedan om
+  filen ska ersätta aktuell journal eller läggas till i den — därefter
+  granskar du under Transaktioner och sparar som vanlig `.journal`-fil.
+  Perfekt för att flytta in bokföringen från ett annat program.
+- **Export**: ladda ner bokföringen som SIE4 (`.se`) med saldon i ören
+  (`#IB`/`#UB`/`#RES`) och alla numrerade verifikationer (`#VER`/`#TRANS`).
+  Serien granskas före exporten: luckor, dubbletter och onumrerade
+  verifikat rapporteras, och de senaste tas inte med.
+
+Båda riktningarna kodar filerna i CP437 enligt SIE-specen.
 
 ## Förutsättningar
 
