@@ -32,6 +32,26 @@ const PROGRAM_NAMN = "hledger-web-gui";
 export const FISCAL_START_CODE = "7011";
 export const FISCAL_END_CODE = "7012";
 
+/** Fältkoder för balansräkningen B1–B16 (sid 1). */
+const BALANS_KODER: Record<string, string> = {
+  B1: "7200",
+  B2: "7210",
+  B3: "7211",
+  B4: "7212",
+  B5: "7213",
+  B6: "7240",
+  B7: "7250",
+  B8: "7260",
+  B9: "7280",
+  B10: "7300",
+  B11: "7320",
+  B12: "7330",
+  B13: "7380",
+  B14: "7381",
+  B15: "7382",
+  B16: "7383",
+};
+
 /** Fältkoder för räkenskapsschemat R1–R10 (sid 1). */
 const SCHEMA_KODER: Record<string, string> = {
   R1: "7400", // Försäljning och utfört arbete samt övriga momspliktiga intäkter
@@ -216,7 +236,15 @@ function genereraBlanketterSru(
     }
   };
 
-  // Sidan 1: räkenskapsschemat i blanketordning ...
+  // Sidan 1: balansräkningen och räkenskapsschemat i blanketordning ...
+  for (const rad of bilaga.balans) {
+    const kod = BALANS_KODER[rad.ruta];
+
+    if (kod && rad.belopp !== 0) {
+      skjutIn(kod, rad.belopp);
+    }
+  }
+
   for (const rad of [...bilaga.intakter, ...bilaga.kostnader]) {
     const kod = SCHEMA_KODER[rad.ruta];
 

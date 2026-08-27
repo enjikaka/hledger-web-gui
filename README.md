@@ -38,6 +38,7 @@ Skatteverkets filöverföring.
 
 ### NE-bilaga (SKV 2161)
 
+- **Balansräkningen B1–B16** mappad ur utgående BAS-kontosaldo
 - **Räkenskapsschemat R1–R11** mappat ur BAS-kontosaldo, med varningar för
   konton utan NE-ruta
 - **Skattemässiga justeringar R12–R48** längs blankettens summokedjan:
@@ -54,7 +55,8 @@ Skatteverkets filöverföring.
     kapitalunderlaget, expansionsskatt 20,6 % som info
   - Övriga rutor markeras "fylls i manuellt"
 - **SRU-export** — INFO.SRU och BLANKETTER.SRU i ISO 8859-1/CRLF enligt
-  Skatteverkets tekniska beskrivning, redo för filöverföringstjänsten
+  Skatteverkets tekniska beskrivning, inklusive B1–B16 och R1–R48, redo för
+  filöverföringstjänsten
 
 Deklarationsuppgifterna (kapitalunderlag, personnummer m.m.) lever bara i
 minnet och nollas när sidan laddas om.
@@ -126,7 +128,7 @@ src/
 │   ├── momsrapport.ts       # Momsrapport, omföring och betalning
 │   ├── balansrapport.ts     # Balansrapport
 │   ├── bokslut.ts           # Årets resultat och nollställning
-│   ├── ne-bilaga.ts         # NE-bilagan R1–R48 med justeringskedjan
+│   ├── ne-bilaga.ts         # NE-bilagan B1–B16 och R1–R48
 │   ├── rantefordelning.ts / egenavgifter.ts /
 │   │   periodiseringsfond.ts / expansionsfond.ts   # Deklarationskalkyler
 │   ├── ne-sru.ts            # SRU-generator (ISO 8859-1)

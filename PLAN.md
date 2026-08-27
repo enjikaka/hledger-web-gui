@@ -47,15 +47,16 @@ Sammanställt 2026-08-24 utifrån minnesanteckningar och genomgång av koden.
   som gäller vid årets utgång (räntefördelningens gäller föregående års).
 - **SRU-export av NE-bilagan** (port från accounted): INFO.SRU +
   BLANKETTER.SRU i ISO 8859-1/CRLF via `<ne-export>` på NE-sidan.
-  Fältkoderna enligt Skatteverkets tekniska beskrivning 2025P4: R1–R10 =
-  7400–7403/7500–7505 (korsvaliderade mot BAS-kontogruppens officiella
-  kopplingstabell), R11 = 7440 och hela justeringskedjan R12–R48
-  (7600/7601/7700 … 7630/7730); konventionen 76xx = pluspost, 77xx =
-  minuspost stämmer med räkenskapskedjans tecken. Mellansummorutorna
-  (R17/R21/R29/R33/R35/R42) har inga koder — Skatteverket räknar dem.
-  Personnummer normaliseras till 12 siffror med sekeln härledd ur åldern;
-  genereringen vägrar vid ogiltiga uppgifter och preflight-kontrollerar
-  blankettblocket. Inmatningen (pnr/namn/postnr/postort) lever bara i minnet.
+  Fältkoderna enligt Skatteverkets tekniska beskrivning 2025P4: B1–B16 =
+  7200–7383, R1–R10 = 7400–7403/7500–7505 (korsvaliderade mot
+  BAS-kontogruppens officiella kopplingstabell), R11 = 7440 och hela
+  justeringskedjan R12–R48 (7600/7601/7700 … 7630/7730); konventionen
+  76xx = pluspost, 77xx = minuspost stämmer med räkenskapskedjans tecken.
+  Mellansummorutorna (R17/R21/R29/R33/R35/R42) har inga koder —
+  Skatteverket räknar dem. Personnummer normaliseras till 12 siffror med
+  sekeln härledd ur åldern; genereringen vägrar vid ogiltiga uppgifter och
+  preflight-kontrollerar blankettblocket. Inmatningen
+  (pnr/namn/postnr/postort) lever bara i minnet.
 - **README** — omskriven till svenska och uppdaterad med aktuell funktionsbild
   (bokföring, moms inkl. sammanslagen vy, bokslut, NE-bilaga med
   deklarationskorten, SRU-export), förutsättningar för journalformatet,
@@ -80,21 +81,17 @@ Sammanställt 2026-08-24 utifrån minnesanteckningar och genomgång av koden.
 
 1. **K1-blanketten** — osäker relevans: gäller bara om någon av verksamheterna
    äger aktier i fåmansföretag (K10-regler). Väntar på besked; annars strykes.
-2. **SRU-export av B-sidorna?** — balanssidan (B1–B16, koderna 7200–7383) är
-   verifierad i kodlistan men exporteras inte än; NE-rapporten visar inte
-   heller balanssaldon. Balansberäkningen från SIE4-exporten kan återanvändas.
 
 ## Prioritering
 
 Inget som blockerar deklarationen återstår — bokföring, moms, NE-bilaga med
-alla justeringar, SRU-export och SIE4-export är på plats. K1 väntar på besked;
-därefter ev. B-sidorna i SRU:n (liten påbyggnad nu när saldobereäkningen finns).
+alla justeringar, SRU-export och SIE4-export är på plats. K1 väntar på besked.
 
 ## Konsekvens för två verksamheter
 
 - Appen arbetar **per journal** = per verksamhet. Alla rapporter gör redan
   rätt.
-- Per verksamhet: bokföring, R1–R11, B1–B10, årets resultat, eget kapital,
+- Per verksamhet: bokföring, R1–R11, B1–B16, årets resultat, eget kapital,
   NE-justeringar R12–R23.
 - Gemensamt: NE R24+ utom räntefördelning (som görs per verksamhet),
   dvs. skattemässiga justeringar, egenavgifter och momsdeklarationen.

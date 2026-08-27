@@ -3,6 +3,7 @@ import { Component, registerComponent } from "webact";
 import {
   generateNeBilaga,
   MANUELLA_NE_RUTOR,
+  type NeBalansRad,
   type NeBilaga,
   type NeJusteringsrad,
   type NeRad,
@@ -23,7 +24,7 @@ const numberFormatter = new Intl.NumberFormat("sv-SE", {
 const kr = (amount: number) =>
   numberFormatter.format(Math.round(amount) === 0 ? 0 : Math.round(amount));
 
-function rutaRader(rad: NeRad): string {
+function rutaRader(rad: NeRad | NeBalansRad): string {
   const kontoRader = rad.konton
     .map(
       (konto) => html`
@@ -42,7 +43,7 @@ function rutaRader(rad: NeRad): string {
       <td>
         ${rad.beskrivning}
         ${
-          MANUELLA_NE_RUTOR.has(rad.ruta)
+          rad.ruta === "R3" && MANUELLA_NE_RUTOR.has(rad.ruta)
             ? `<span class="manuell">fylls i manuellt</span>`
             : ""
         }
@@ -53,7 +54,7 @@ function rutaRader(rad: NeRad): string {
   `;
 }
 
-function tabell(rubrik: string, rader: Array<NeRad>): string {
+function tabell(rubrik: string, rader: Array<NeRad | NeBalansRad>): string {
   return html`
     <table class="mono">
       <caption>
@@ -145,6 +146,7 @@ class RapportNe extends Component {
       );
 
       $section.innerHTML = html`
+        ${tabell(`Balansräkning ${rapport.year}`, rapport.balans)}
         ${tabell(`Intäkter ${rapport.year}`, rapport.intakter)}
         ${tabell(`Kostnader ${rapport.year}`, rapport.kostnader)}
         <table class="mono">

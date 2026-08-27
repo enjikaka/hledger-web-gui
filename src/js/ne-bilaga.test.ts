@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { beraknaArsresultatOre, skapaArsresultatTransaktion } from "./bokslut";
 import {
   generateNeBilaga,
+  type NeBalansRuta,
   type NeBilaga,
   type NeJusteringsrad,
   type NeRuta,
@@ -43,7 +44,47 @@ function jrad(bilaga: NeBilaga, ruta: string): NeJusteringsrad {
   return rad;
 }
 
+function brad(bilaga: NeBilaga, ruta: NeBalansRuta): number {
+  const rad = bilaga.balans.find((r) => r.ruta === ruta);
+
+  if (!rad) {
+    throw new Error(`Ruta ${ruta} saknas i balansräkningen`);
+  }
+
+  return rad.belopp;
+}
+
 beforeEach(rensaJournal);
+
+describe("balansrutorna B1–B16", () => {
+  it("lägger utgående balans i rätt B-rutor och tar med ej omfört resultat i B10", async () => {
+    await laddaJournal(
+      journal(
+        `2024-12-31 Gammal bank
+    1930  1000.00 SEK
+    2010  -1000.00 SEK`,
+        `2025-01-10 Inventarie
+    1220  5000.00 SEK
+    1930  -5000.00 SEK`,
+        `2025-02-01 Försäljning
+    1930  12500.00 SEK
+    3001  -10000.00 SEK
+    2611  -2500.00 SEK`,
+        `2025-03-01 Leverantörsskuld
+    4022  3000.00 SEK
+    2440  -3000.00 SEK`,
+      ),
+    );
+
+    const bilaga = generateNeBilaga("2025");
+
+    expect(brad(bilaga, "B4")).toBe(5000);
+    expect(brad(bilaga, "B9")).toBe(8500);
+    expect(brad(bilaga, "B10")).toBe(8000);
+    expect(brad(bilaga, "B15")).toBe(3000);
+    expect(brad(bilaga, "B16")).toBe(2500);
+  });
+});
 
 describe("intäktsrutorna R1–R4", () => {
   it("lägger momspliktig försäljning i R1", async () => {
@@ -291,9 +332,15 @@ describe("R11 bokfört resultat", () => {
       skapaArsresultatTransaktion("2025")!,
     ];
 
-    // Omföringen nollar 3000/4000 mot 8999 — utan spärren skulle bilagan bli tom
-    expect(generateNeBilaga("2025")).toEqual(fore);
-    expect(generateNeBilaga("2025").bokfortResultat).toBe(6000);
+    // Omföringen nollar 3000/4000 mot 8999 — utan spärren skulle
+    // räkenskapsschema och justeringskedja bli tomma. Balansens B10 får
+    // däremot samma belopp från bokfört 2019 i stället för beräknat resultat.
+    const efter = generateNeBilaga("2025");
+    expect(efter.intakter).toEqual(fore.intakter);
+    expect(efter.kostnader).toEqual(fore.kostnader);
+    expect(efter.justeringar).toEqual(fore.justeringar);
+    expect(efter.bokfortResultat).toBe(6000);
+    expect(brad(efter, "B10")).toBe(brad(fore, "B10"));
   });
 });
 

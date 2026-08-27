@@ -34,6 +34,24 @@ export type NeRuta =
   | "R9"
   | "R10";
 
+export type NeBalansRuta =
+  | "B1"
+  | "B2"
+  | "B3"
+  | "B4"
+  | "B5"
+  | "B6"
+  | "B7"
+  | "B8"
+  | "B9"
+  | "B10"
+  | "B11"
+  | "B12"
+  | "B13"
+  | "B14"
+  | "B15"
+  | "B16";
+
 export type NeKontoRad = {
   konto: number;
   namn: string;
@@ -42,6 +60,13 @@ export type NeKontoRad = {
 
 export type NeRad = {
   ruta: NeRuta;
+  beskrivning: string;
+  belopp: number;
+  konton: Array<NeKontoRad>;
+};
+
+export type NeBalansRad = {
+  ruta: NeBalansRuta;
   beskrivning: string;
   belopp: number;
   konton: Array<NeKontoRad>;
@@ -94,6 +119,8 @@ export type NeJusteringsrad = {
 
 export type NeBilaga = {
   year: string;
+  /** Balansräkningen B1–B16, utgående balans vid årets slut. */
+  balans: Array<NeBalansRad>;
   intakter: Array<NeRad>; // R1–R4
   kostnader: Array<NeRad>; // R5–R10
   /** R11 — intäkter minus kostnader. Positivt = vinst. */
@@ -153,6 +180,15 @@ type NeMappning = {
   /** Kostnadskonton bokförs i debet (positivt); intäktskonton i kredit,
    *  så tecknet byts vid summeringen. */
   kostnad: boolean;
+};
+
+type NeBalansMappning = {
+  ruta: NeBalansRuta;
+  beskrivning: string;
+  intervall: Array<[start: number, slut: number]>;
+  /** Tillgångar visas med debetsaldo som positivt, eget kapital/skulder med
+   *  kreditsaldo som positivt. */
+  tecken: 1 | -1;
 };
 
 /**
@@ -252,6 +288,138 @@ const NE_MAPPNINGAR: Array<NeMappning> = [
 
 function hittaMappning(konto: number): NeMappning | undefined {
   return NE_MAPPNINGAR.find((mappning) =>
+    mappning.intervall.some(([start, slut]) => konto >= start && konto <= slut),
+  );
+}
+
+/** Balansräkningens B1–B16 enligt BAS kopplingstabell NE_EJ_K1. */
+const BALANS_MAPPNINGAR: Array<NeBalansMappning> = [
+  {
+    ruta: "B1",
+    beskrivning: "Immateriella anläggningstillgångar",
+    intervall: [[1000, 1099]],
+    tecken: 1,
+  },
+  {
+    ruta: "B2",
+    beskrivning: "Byggnader och markanläggningar",
+    intervall: [
+      [1100, 1129],
+      [1150, 1179],
+      [1190, 1199],
+    ],
+    tecken: 1,
+  },
+  {
+    ruta: "B3",
+    beskrivning: "Mark och andra tillgångar som inte får skrivas av",
+    intervall: [
+      [1130, 1149],
+      [1180, 1189],
+      [1291, 1291],
+    ],
+    tecken: 1,
+  },
+  {
+    ruta: "B4",
+    beskrivning: "Maskiner och inventarier",
+    intervall: [
+      [1200, 1290],
+      [1292, 1299],
+    ],
+    tecken: 1,
+  },
+  {
+    ruta: "B5",
+    beskrivning: "Övriga anläggningstillgångar",
+    intervall: [[1300, 1399]],
+    tecken: 1,
+  },
+  {
+    ruta: "B6",
+    beskrivning: "Varulager",
+    intervall: [[1400, 1499]],
+    tecken: 1,
+  },
+  {
+    ruta: "B7",
+    beskrivning: "Kundfordringar",
+    intervall: [[1500, 1599]],
+    tecken: 1,
+  },
+  {
+    ruta: "B8",
+    beskrivning: "Övriga fordringar",
+    intervall: [[1600, 1899]],
+    tecken: 1,
+  },
+  {
+    ruta: "B9",
+    beskrivning: "Kassa och bank",
+    intervall: [[1900, 1999]],
+    tecken: 1,
+  },
+  {
+    ruta: "B10",
+    beskrivning: "Eget kapital",
+    intervall: [
+      [2010, 2019],
+      [2050, 2059],
+    ],
+    tecken: -1,
+  },
+  {
+    ruta: "B11",
+    beskrivning: "Obeskattade reserver",
+    intervall: [[2100, 2199]],
+    tecken: -1,
+  },
+  {
+    ruta: "B12",
+    beskrivning: "Avsättningar",
+    intervall: [[2200, 2299]],
+    tecken: -1,
+  },
+  {
+    ruta: "B13",
+    beskrivning: "Låneskulder",
+    intervall: [
+      [2300, 2399],
+      [2410, 2419],
+      [2480, 2489],
+    ],
+    tecken: -1,
+  },
+  {
+    ruta: "B14",
+    beskrivning: "Skatteskulder",
+    intervall: [],
+    tecken: -1,
+  },
+  {
+    ruta: "B15",
+    beskrivning: "Leverantörsskulder",
+    intervall: [
+      [2440, 2449],
+      [2460, 2479],
+    ],
+    tecken: -1,
+  },
+  {
+    ruta: "B16",
+    beskrivning: "Övriga skulder",
+    intervall: [
+      [2420, 2439],
+      [2450, 2459],
+      [2490, 2499],
+      [2600, 2999],
+    ],
+    tecken: -1,
+  },
+];
+
+function hittaBalansMappning(konto: number): NeBalansMappning | undefined {
+  return BALANS_MAPPNINGAR.find((mappning) =>
     mappning.intervall.some(([start, slut]) => konto >= start && konto <= slut),
   );
 }
@@ -741,11 +909,101 @@ function byggJusteringar(
  *  (den skulle nolla resultatkontona). */
 const RESULTATDISPOSITION_KONTO = 8999;
 
+function byggBalansRader(
+  saldon: Map<number, number>,
+  resultatSaldo: number,
+  kontonamn: (konto: number) => string,
+): Array<NeBalansRad> {
+  const rader = new Map<NeBalansRuta, NeBalansRad>(
+    BALANS_MAPPNINGAR.map((mappning) => [
+      mappning.ruta,
+      {
+        ruta: mappning.ruta,
+        beskrivning: mappning.beskrivning,
+        belopp: 0,
+        konton: [],
+      },
+    ]),
+  );
+
+  const radFor = (ruta: NeBalansRuta): NeBalansRad => {
+    const rad = rader.get(ruta);
+
+    if (!rad) {
+      throw new Error(`Intern fel: NE-ruta ${ruta} saknas i balansräkningen`);
+    }
+
+    return rad;
+  };
+
+  for (const [konto, saldo] of [...saldon.entries()].sort(
+    ([a], [b]) => a - b,
+  )) {
+    if (Math.abs(saldo) < 0.005) {
+      continue;
+    }
+
+    const mappning = hittaBalansMappning(konto);
+
+    if (!mappning) {
+      continue;
+    }
+
+    const belopp = mappning.tecken * saldo;
+    const rad = radFor(mappning.ruta);
+
+    rad.belopp += belopp;
+    rad.konton.push({
+      konto,
+      namn: kontonamn(konto),
+      belopp: Math.round(belopp),
+    });
+  }
+
+  const aretsResultat = Math.round(-resultatSaldo);
+  if (aretsResultat !== 0) {
+    const rad = radFor("B10");
+    rad.belopp += aretsResultat;
+    rad.konton.push({
+      konto: RESULTATDISPOSITION_KONTO,
+      namn: "Beräknat resultat som inte omförts",
+      belopp: aretsResultat,
+    });
+  }
+
+  for (const rad of rader.values()) {
+    rad.belopp = Math.round(rad.belopp);
+  }
+
+  return BALANS_MAPPNINGAR.map((mappning) => radFor(mappning.ruta));
+}
+
 export function generateNeBilaga(
   year: string,
   val: NeDeklarationsVal = {},
 ): NeBilaga {
   const saldon = new Map<number, number>();
+  const balansSaldon = new Map<number, number>();
+  let balanseratResultat = 0;
+
+  for (const tx of transactions.value) {
+    const txYear = tx.date.slice(0, 4);
+
+    if (txYear > year) {
+      continue;
+    }
+
+    for (const posting of tx.postings) {
+      if (posting.account >= 3000) {
+        balanseratResultat += posting.amount;
+      } else {
+        balansSaldon.set(
+          posting.account,
+          (balansSaldon.get(posting.account) ?? 0) + posting.amount,
+        );
+      }
+    }
+  }
 
   for (const tx of transactions.value) {
     if (tx.date.slice(0, 4) !== year) {
@@ -774,6 +1032,8 @@ export function generateNeBilaga(
 
   const kontonamn = (konto: number) =>
     aliases.value.find((alias) => alias.id === konto)?.to ?? "";
+
+  const balans = byggBalansRader(balansSaldon, balanseratResultat, kontonamn);
 
   const rader = new Map<NeRuta, NeRad>(
     NE_MAPPNINGAR.map((mappning) => [
@@ -859,6 +1119,7 @@ export function generateNeBilaga(
 
   return {
     year,
+    balans,
     intakter,
     kostnader,
     bokfortResultat,

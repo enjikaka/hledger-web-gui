@@ -35,6 +35,24 @@ const rad = (
 function bilaga(): NeBilaga {
   return {
     year: "2025",
+    balans: [
+      { ruta: "B1", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B2", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B3", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B4", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B5", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B6", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B7", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B8", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B9", beskrivning: "", belopp: 12500, konton: [] },
+      { ruta: "B10", beskrivning: "", belopp: 7200, konton: [] },
+      { ruta: "B11", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B12", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B13", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B14", beskrivning: "", belopp: 0, konton: [] },
+      { ruta: "B15", beskrivning: "", belopp: 3000, konton: [] },
+      { ruta: "B16", beskrivning: "", belopp: 2300, konton: [] },
+    ],
     intakter: [
       { ruta: "R1", beskrivning: "", belopp: 10000, konton: [] },
       { ruta: "R2", beskrivning: "", belopp: 0, konton: [] },
@@ -164,6 +182,10 @@ describe("genereraNeSru — BLANKETTER.SRU", () => {
     expect(uppgifter(filer.blanketterSru)).toEqual([
       "7011 20250101",
       "7012 20251231",
+      "7280 12500",
+      "7300 7200",
+      "7382 3000",
+      "7383 2300",
       "7400 10000",
       "7403 200",
       "7500 3000",
