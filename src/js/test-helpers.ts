@@ -1,5 +1,6 @@
 import { laddaExtraJournal } from "./journal-file";
 import { parseJournalFile } from "./parse-journal-file";
+import { ore } from "./finance-utils";
 import {
   accounts,
   aliases,
@@ -72,7 +73,7 @@ export function radrader(postings: Array<{ account: number; amount: number }>) {
 /** Summan av alla belopp i ören — ska alltid vara 0 i ett balanserat verifikat. */
 export function summaOre(postings: Array<{ amount: number }>): number {
   return postings.reduce(
-    (summa, posting) => summa + Math.round(posting.amount * 100),
+    (summa, posting) => summa + ore(posting.amount),
     0,
   );
 }

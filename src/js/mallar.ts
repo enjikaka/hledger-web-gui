@@ -1,5 +1,7 @@
 import type { Posting, Transaction } from "./parse-journal-file";
 import { numrera } from "./verifikat";
+import { ore } from "./finance-utils";
+
 
 export type MallTyp = "köp" | "försäljning" | "insättning" | "uttag";
 
@@ -98,7 +100,7 @@ export function skapaPostings(
   beloppInklMoms: number,
   betalkonto: number = mall.betalkonto,
 ): Array<Posting> {
-  const totalOre = Math.round(beloppInklMoms * 100);
+  const totalOre = ore(beloppInklMoms);
   const momsOre = Math.round((totalOre * mall.momssats) / (1 + mall.momssats));
   const nettoOre = totalOre - momsOre;
 
@@ -120,7 +122,7 @@ export function skapaPostings(
       const rows = [posting(mall.konto, -nettoOre)];
       if (momsOre !== 0) {
         rows.push(
-          posting(UTGAENDE_MOMS[Math.round(mall.momssats * 100)], -momsOre),
+          posting(UTGAENDE_MOMS[ore(mall.momssats)], -momsOre),
         );
       }
       rows.push(posting(betalkonto, totalOre));

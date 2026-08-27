@@ -10,6 +10,8 @@ import {
 import type { Posting, Transaction } from "./parse-journal-file";
 import { transactions } from "./signals";
 import { numrera } from "./verifikat";
+import { ore } from "./finance-utils";
+
 
 /** Redovisningskonto för moms — nettot att betala bokförs hit i kredit. */
 export const REDOVISNINGSKONTO_MOMS = 2650;
@@ -114,11 +116,11 @@ export function generateMomsrapportFor(
         continue;
       }
 
-      const ore = Math.round(posting.amount * 100);
+      const beloppOre = ore(posting.amount);
 
       oren.set(
         ruta,
-        (oren.get(ruta) ?? 0) + (arKreditnormal(ruta) ? -ore : ore),
+        (oren.get(ruta) ?? 0) + (arKreditnormal(ruta) ? -beloppOre : beloppOre),
       );
     }
   }
@@ -190,10 +192,10 @@ export function momsSkuld(): MomsSkuld | null {
 
     for (const posting of tx.postings) {
       if (posting.account === REDOVISNINGSKONTO_MOMS) {
-        saldo2650 += Math.round(posting.amount * 100);
-      } else if (posting.account === MOMSFORDRAN) {
-        saldo1650 += Math.round(posting.amount * 100);
-      }
+          saldo2650 += ore(posting.amount);
+        } else if (posting.account === MOMSFORDRAN) {
+          saldo1650 += ore(posting.amount);
+        }
     }
   }
 
@@ -270,7 +272,7 @@ export function skapaMomsomforing(year: string): Transaction | null {
         saldonOre.set(
           posting.account,
           (saldonOre.get(posting.account) ?? 0) +
-            Math.round(posting.amount * 100),
+            ore(posting.amount),
         );
       }
     }
@@ -304,7 +306,7 @@ export function skapaMomsomforing(year: string): Transaction | null {
   // i stället för att avrundas här på nytt, så att 2650/1650 alltid är exakt
   // det som fylls i deklarationen — även när rutornas egna avrundningar
   // sammantaget drar iväg något öre från råsaldot.
-  const deklareratOre = Math.round(generateMomsrapport(year).nettoMoms * 100);
+  const deklareratOre = ore(generateMomsrapport(year).nettoMoms);
 
   if (deklareratOre > 0) {
     postings.push(posting(REDOVISNINGSKONTO_MOMS, -deklareratOre));

@@ -3,6 +3,7 @@ import type { Transaction } from "./parse-journal-file";
 import { genereraSieFor, kodatCp437 } from "./sie-export";
 import { decodaCp437, sieTillJournal, tolkaSie } from "./sie-import";
 import { laddaJournal, rensaJournal } from "./test-helpers";
+import { ore } from "./finance-utils";
 
 /** Handskriven SIE-fil med två perioder, kontonamn, IB-rader, citerad text
  *  med mellanslag och negativa belopp — som en Bokio-export kan se ut. */
@@ -206,7 +207,7 @@ alias 1930 = tillgångar:bankkonto
     expect(
       tx.postings.map((p) => ({
         account: p.account,
-        ore: Math.round(p.amount * 100),
+        ore: ore(p.amount),
       })),
     ).toEqual(
       original.postings.map(({ account, beloppOre }) => ({

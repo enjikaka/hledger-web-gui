@@ -1,6 +1,8 @@
 import type { Posting, Transaction } from "./parse-journal-file";
 import { transactions } from "./signals";
 import { numrera } from "./verifikat";
+import { ore } from "./finance-utils";
+
 
 /**
  * Bokslutsfunktioner för enskild firma, samma automatiska verifikat som Bokio:
@@ -41,7 +43,7 @@ export function beraknaArsresultatOre(year: string): number {
 
     for (const p of tx.postings) {
       if (p.account >= 3000 && p.account <= 8999) {
-        ore += Math.round(p.amount * 100);
+        ore += ore(p.amount);
       }
     }
   }
@@ -105,7 +107,7 @@ export function skapaNollningTransaktion(year: string): Transaction | null {
       if (arKapitalUnderkonto(p.account)) {
         saldonOre.set(
           p.account,
-          (saldonOre.get(p.account) ?? 0) + Math.round(p.amount * 100),
+          (saldonOre.get(p.account) ?? 0) + ore(p.amount),
         );
       }
     }

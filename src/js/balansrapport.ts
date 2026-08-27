@@ -1,4 +1,6 @@
 import { aliases, transactions } from "./signals";
+import { ore } from "./finance-utils";
+
 
 export type KontoRad = {
   konto: number;
@@ -92,6 +94,7 @@ export function generateBalansrapport(year: string): Balansrapport {
     summaTillgangar,
     summaEgetKapitalSkulder,
     differensOre:
-      Math.round(summaTillgangar * 100) - Math.round(summaEgetKapitalSkulder * 100),
+      ore(summaTillgangar) - ore(summaEgetKapitalSkulder),
+
   };
 }

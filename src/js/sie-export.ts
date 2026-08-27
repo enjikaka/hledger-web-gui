@@ -1,6 +1,8 @@
 import type { Transaction } from "./parse-journal-file";
 import { transactions } from "./signals";
 import { tolkaVerifikat } from "./verifikat";
+import { ore, saldoOre } from "./finance-utils";
+
 
 /**
  * SIE4-export — svensk standard för bokföringsutbyte (SIE-gruppens filformat,
@@ -45,8 +47,6 @@ const arResultatkonto = (konto: number) => konto >= 3000 && konto <= 8999;
 /** "ÅÅÅÅ-MM-DD" → SIE:s ÅÅÅÅMMDD. */
 const sieDatum = (datum: string) => datum.replace(/-/g, "");
 
-/** Hela ören utan decimaler. */
-const ore = (belopp: number) => Math.round(belopp * 100);
 
 /** Tar bort tecken SIE-strängar inte tål (citering, radbrytningar). */
 function saneraText(text: string): string {
@@ -74,28 +74,6 @@ function kontonIOrdning(
   return [...konton].sort((a, b) => a - b);
 }
 
-/** Summan av alla poster på kontot fram till och med datumet, i ören. */
-function saldoOre(
-  txs: Array<Transaction>,
-  konto: number,
-  gäller: (datum: string) => boolean,
-): number {
-  let summa = 0;
-
-  for (const tx of txs) {
-    if (!gäller(tx.date)) {
-      continue;
-    }
-
-    for (const posting of tx.postings) {
-      if (posting.account === konto) {
-        summa += ore(posting.amount);
-      }
-    }
-  }
-
-  return summa;
-}
 
 /**
  * Genererar SIE4-texten för ett år utifrån godtyckligt transaktionsunderlag.
