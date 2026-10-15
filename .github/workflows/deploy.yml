@@ -26,7 +26,7 @@ jobs:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           audience: ${{ secrets.TS_AUDIENCE }}
           tags: tag:ci
-          ping: 100.X.Y.Z
+          ping: 100.84.204.6
 
       - name: Push to dokku
         uses: dokku/github-action@master
