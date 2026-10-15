@@ -17,7 +17,6 @@
   "devDependencies": {
     "@biomejs/biome": "2.1.1",
     "@preact/signals-core": "^1.11.0",
-    "signals-devtool-provider": "^0.5.4",
     "typescript": "^7.0.2",
     "vite": "^8.1.5",
     "vitest": "^4.1.10",
