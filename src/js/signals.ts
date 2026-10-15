@@ -1,5 +1,4 @@
 import { computed, effect, signal } from "@preact/signals-core";
-import signalsDevtool from "signals-devtool-provider";
 import type { NeDeklarationsVal } from "./ne-bilaga";
 import type { Account, Alias, Transaction } from "./parse-journal-file";
 
@@ -81,7 +80,7 @@ export const hledgerOutput = computed(() => {
   return `${[header, transactionsHledger].filter(Boolean).join("\n\n")}\n`;
 });
 
-const signals = {
+export const signals = {
   transactions,
   accounts,
   aliases,
@@ -94,12 +93,3 @@ const signals = {
   extraJournal,
   momsVy,
 };
-
-// Devtool-providern kopplar upp sig mot Chrome-tilläggets port via den globala
-// `chrome`. Den saknas i Firefox, Safari och Node (testerna), och providerns
-// `chrome?.runtime` skyddar bara mot att `runtime` fattas — inte mot att hela
-// identifieraren är odeklarerad. Utan vakten kastar modulen redan vid import
-// och tar hela appen med sig.
-if ("chrome" in globalThis) {
-  signalsDevtool.init({ signals, effect });
-}
