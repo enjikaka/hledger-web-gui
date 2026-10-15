@@ -18,17 +18,16 @@ permissions:
 jobs:
   test:
     name: Typkontroll och tester
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
 
     steps:
       - name: Hämta koden
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Sätt upp Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          # Vite 8 kräver ^20.19 || >=22.12
-          node-version: "22"
+          node-version: "26"
           cache: npm
 
       - name: Installera beroenden
@@ -45,7 +44,7 @@ jobs:
       - name: Spara testrapporten
         # Körs även när testerna faller — det är då rapporten behövs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testresultat
           path: test-results.xml

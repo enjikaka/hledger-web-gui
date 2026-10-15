@@ -1,32 +1,36 @@
-name: Vite Github Pages Deploy
+name: "Dokku Deploy"
+
+permissions:
+  id-token: write
+  deployments: write
+  contents: read
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+    branches:
+      - main
 
 jobs:
-  # Build job
-  build:
-    runs-on: ubuntu-latest
-    environment:
-      name: demo
-      url: ${{ steps.deploy_to_pages.outputs.github_pages_url }}
+  deploy:
+    runs-on: ubuntu-26.04-arm
+    environment: production
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Vite Github Pages Deployer
-        uses: skywarth/vite-github-pages-deployer@master
-        id: deploy_to_pages
+      - name: Cloning repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+          ping: 100.X.Y.Z
+
+      - name: Push to dokku
+        uses: dokku/github-action@master
+        with:
+          branch: main
+          git_remote_url: ${{ vars.GIT_REMOTE_URL }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
